@@ -1,0 +1,54 @@
+{% extends 'driverAssignment/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Hero Section -->
+    <div class="card text-white bg-primary mb-3">
+        <div class="card-header">
+            <h1 class="display-4">{{ route_data.route_name }}</h1>
+        </div>
+        <div class="card-body">
+            <h4 class="card-title">Route Overview</h4>
+            <p class="card-text">
+                <strong>Created:</strong> {{ route_data.created_at|date:"F d, Y H:i" }}<br>
+                <strong>Starting Point:</strong> {{ route_data.start }}<br>
+                <strong>Ending Point:</strong> {{ route_data.finish }}
+            </p>
+            <a href="https://www.google.com/maps/dir/?api=1&origin={{ route_data.start|urlencode }}&destination={{ route_data.finish|urlencode }}"
+               target="_blank" class="btn btn-light">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                </svg>
+                View Route on Google Maps
+            </a>
+
+            <a href="{% url 'driverAssignment:drivers_assigned' route_data.id %}" class="btn btn-light" aria-disabled="false">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-truck" viewBox="0 0 16 16">
+                        <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-3.998-.085A1.5 1.5 0 0 1 0 10.5v-7zm1.294 7.456A1.999 1.999 0 0 1 4 12h6a2 2 0 1 1-3.418-1.587 1.5 1.5 0 0 0-2.588 0zm1.998-.05a2 2 0 1 1 3.985 0H5.292zm-2.205-6.996A1.5 1.5 0 0 1 4.5 4h7a1.5 1.5 0 0 1 1.5 1.5v1H4v-.5zm9.5 8.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm-9.5 0a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm4.5-3a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                    </svg>
+                    Trucks Assigned to This Route
+                </a>
+                
+        </div>
+    </div>
+
+    <!-- Additional Details Section -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h3 class="card-title">Route Information</h3>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Route ID:</strong> {{ route_data.id }}</li>
+                <li class="list-group-item"><strong>Created Date:</strong> {{ route_data.created_at|date:"F d, Y" }}</li>
+                <li class="list-group-item"><strong>Start Location:</strong> {{ route_data.start }}</li>
+                <li class="list-group-item"><strong>Finish Location:</strong> {{ route_data.finish }}</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Back Link -->
+    <a href="{% url 'driverAssignment:all_routes' %}" class="btn btn-secondary mt-3">Back to All Routes</a>
+</div>
+{% endblock %}

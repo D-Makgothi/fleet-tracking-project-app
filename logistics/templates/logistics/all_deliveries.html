@@ -1,0 +1,50 @@
+{% extends 'logistics/base.html' %}
+
+{% block title %}Delivery Database{% endblock %}
+
+{% block content %}
+{% comment %} This this is the basic strtcure of a table that 
+can be used to retrieve data from registered users and then display 
+the registered users live {% endcomment %}
+
+<table class="table">
+    <thead class ="thead-dark">
+        <tr>
+        <th>Client</th>
+        <th>Load Dateline</th>
+        <th>Route Taken</th>
+
+        <th>Vehicle Registration</th>
+        <th>Vehicle Driver</th>
+        <th>Load Quantity</th>
+        <th>Order Number</th>
+
+
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for delivery_var in delivery_data %}
+    <tr>
+        <td>{{ delivery_var.client }}</td>
+        <td>{{ delivery_var.load_dateline }}</td>
+        <td>{{ delivery_var.route_taken }}</td>
+        
+        <td>{{ delivery_var.vehicle_registration }}</td>
+        <td>{{ delivery_var.vehicle_driver }}</td>
+        <td>{{ delivery_var.load_quantity }}</td>
+        <td>{{ delivery_var.order_number }}</td>
+
+        {% comment %} <td>
+            <a href="{% url 'register_login:edit_client' delivery_var.id %}">Edit</a> <!-- Cross Referencing from a different app all together to edit client details -->
+        </td>
+        <td>
+            <a href="{% url 'register_login:delete_client' delivery_var.id %}">Dlete</a> <!-- Cross Referencing from a different app all together to delete a client from the db -->
+        </td> {% endcomment %}
+
+    </tr>
+    {% endfor %}
+</tbody>
+
+</table>
+{% endblock %}

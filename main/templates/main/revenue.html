@@ -1,0 +1,152 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Revenue Reports{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Revenue Reports</h2>
+        <div>
+            <a href="{% url 'main:export_all_revenue_excel' %}{% if search_query %}?search={{ search_query }}{% endif %}" 
+               class="btn btn-success me-2">
+                <i class="bi bi-file-earmark-excel"></i> Export to Excel
+            </a>
+            <a href="{% url 'main:driver_revenue_list' %}" class="btn btn-info me-2">View Individual Driver Revenue</a>
+            <a href="{% url 'main:daily_rev_report' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add New Report
+            </a>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Search by fleet number or vehicle number..." 
+                           value="{{ search_query }}">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    {% if search_query %}
+                        <a href="{% url 'main:revenue' %}" class="btn btn-outline-secondary">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if table_data %}
+        <div class="card">
+            <div class="card-header">
+                <h5>Daily Revenue Data</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Fleet Number</th>
+                                <th>Vehicle Registration</th>
+                                <th>Number of Loads</th>
+                                <th>Tonnage</th>
+                                <th>Completed Routes</th>
+                                <th>Total Revenue</th>
+                                <th>Planned Revenue</th>
+                                <th>Variance</th>
+                                <th>Predicted Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in table_data %}
+                            <tr>
+                                <td><strong>{{ report.fleet_no }}</strong></td>
+                                <td>{{ report.vehicle_no }}</td>
+                                <td>{{ report.no_of_loads }}</td>
+                                <td>{{ report.tonnage }} tons</td>
+                                <td>
+                                    {% if report.completed_routes.all %}
+                                        {% for route in report.completed_routes.all %}
+                                            <span class="badge bg-secondary me-1">
+                                                {{ route.route_name }} ({{ route.start }} → {{ route.finish }})
+                                            </span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">No routes completed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong class="text-success">R{{ report.revenue|floatformat:2 }}</strong>
+                                </td>
+                                <td>R{{ report.display_planned_revenue|floatformat:2 }}</td>
+                                <td>
+                                    {% if report.variance >= 0 %}
+                                        <span class="text-success">+R{{ report.variance|floatformat:2 }}</span>
+                                    {% else %}
+                                        <span class="text-danger">R{{ report.variance|floatformat:2 }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-info"><strong>R{{ report.predicted|floatformat:2 }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-info">
+                                <td colspan="5"><strong>Totals</strong></td>
+                                <td><strong class="text-success">
+                                    R{{ total_revenue|floatformat:2 }}
+                                </strong></td>
+                                <td><strong>
+                                    R{{ total_planned|floatformat:2 }}
+                                </strong></td>
+                                <td><strong>
+                                    R{{ total_variance|floatformat:2 }}
+                                </strong></td>
+                                <td><strong class="text-info">
+                                    R{{ total_predicted|floatformat:2 }}
+                                </strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <form method="POST" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" name="clear" class="btn btn-danger" 
+                        onclick="return confirm('Are you sure you want to clear all revenue reports?')">
+                    <i class="bi bi-trash"></i> Clear All Reports
+                </button>
+            </form>
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-currency-dollar fs-1 text-muted"></i>
+                <h4 class="text-muted mt-3">
+                    {% if search_query %}
+                        No Revenue Reports Found Matching "{{ search_query }}"
+                    {% else %}
+                        No Revenue Reports Found
+                    {% endif %}
+                </h4>
+                <p class="text-muted">
+                    {% if search_query %}
+                        Try adjusting your search criteria or clear the search to see all reports.
+                    {% else %}
+                        Start by creating your first daily revenue report.
+                    {% endif %}
+                </p>
+                {% if search_query %}
+                    <a href="{% url 'main:revenue' %}" class="btn btn-outline-secondary me-2">Clear Search</a>
+                {% endif %}
+                <a href="{% url 'main:daily_rev_report' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create Revenue Report
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

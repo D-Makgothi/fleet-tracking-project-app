@@ -1,0 +1,386 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}CRM Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-robot text-primary me-2"></i>
+                        AI Fleet CRM Dashboard
+                    </h2>
+                    <p class="text-muted mb-0">AI-powered fleet management prospect hunting and approval system</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'crm:agent_add' %}" class="btn btn-primary">
+                        <i class="bi bi-person-plus me-1"></i>Add Agent
+                    </a>
+                    <a href="{% url 'crm:client_add' %}" class="btn btn-success">
+                        <i class="bi bi-briefcase-fill me-1"></i>Add Client
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-people-fill fs-1"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fs-6 fw-bold">Active Agents</div>
+                            <div class="fs-2 fw-bold">{{ total_agents }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white bg-opacity-25">
+                    <a href="{% url 'crm:agents' %}" class="text-white text-decoration-none">
+                        <small>View All Agents <i class="bi bi-arrow-right"></i></small>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-briefcase-fill fs-1"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fs-6 fw-bold">Total Clients</div>
+                            <div class="fs-2 fw-bold">{{ total_clients }}</div>
+                            <small>{{ active_clients }} Active</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white bg-opacity-25">
+                    <a href="{% url 'crm:clients' %}" class="text-white text-decoration-none">
+                        <small>View All Clients <i class="bi bi-arrow-right"></i></small>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-eye-fill fs-1"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fs-6 fw-bold">Prospects</div>
+                            <div class="fs-2 fw-bold">{{ prospects }}</div>
+                            <small>Potential Clients</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white bg-opacity-25">
+                    <a href="{% url 'crm:clients' %}?status=prospect" class="text-white text-decoration-none">
+                        <small>View Prospects <i class="bi bi-arrow-right"></i></small>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-currency-dollar fs-1"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fs-6 fw-bold">Potential Value</div>
+                            <div class="fs-5 fw-bold">R{{ total_potential_value|floatformat:2 }}</div>
+                            <small>Total Pipeline</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white bg-opacity-25">
+                    <a href="{% url 'crm:performance' %}" class="text-white text-decoration-none">
+                        <small>View Performance <i class="bi bi-arrow-right"></i></small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row">
+        <!-- Recent Activity Column -->
+        <div class="col-lg-8">
+            <!-- Client Status Distribution -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pie-chart me-2"></i>Client Status Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for status in status_distribution %}
+                        <div class="col-lg-2 col-md-4 col-6 mb-3">
+                            <div class="text-center">
+                                <div class="fs-3 fw-bold text-primary">{{ status.count }}</div>
+                                <div class="small text-muted text-capitalize">{{ status.status }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Client Interactions -->
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-chat-dots me-2"></i>Recent Client Interactions
+                    </h5>
+                    <a href="{% url 'crm:interactions' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_interactions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Client</th>
+                                    <th>Type</th>
+                                    <th>Agent</th>
+                                    <th>Date</th>
+                                    <th>Subject</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for interaction in recent_interactions %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'crm:client_detail' interaction.client.id %}" class="text-decoration-none">
+                                            {{ interaction.client.client_name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ interaction.get_interaction_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        {% if interaction.agent %}
+                                            <a href="{% url 'crm:agent_detail' interaction.agent.id %}" class="text-decoration-none">
+                                                {{ interaction.agent.full_name }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ interaction.interaction_date|date:"M d, Y" }}</small>
+                                    </td>
+                                    <td>{{ interaction.subject|truncatechars:40 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-chat-dots text-muted fs-1"></i>
+                        <p class="text-muted mt-2">No recent interactions found</p>
+                        <a href="{% url 'crm:interaction_add' %}" class="btn btn-primary">Log First Interaction</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- AI Hunting Statistics -->
+            {% if ai_hunting_stats.total_sessions %}
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-robot me-2"></i>AI Hunting Statistics (Last 30 Days)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="fs-4 fw-bold text-info">{{ ai_hunting_stats.total_sessions|default:0 }}</div>
+                            <div class="small text-muted">Hunting Sessions</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="fs-4 fw-bold text-warning">{{ ai_hunting_stats.total_prospects|default:0 }}</div>
+                            <div class="small text-muted">Prospects Found</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="fs-4 fw-bold text-success">{{ ai_hunting_stats.total_clients_created|default:0 }}</div>
+                            <div class="small text-muted">Clients Created</div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="{% url 'crm:hunting_logs' %}" class="btn btn-outline-info btn-sm">
+                            View Hunting Logs <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar Column -->
+        <div class="col-lg-4">
+            <!-- Top Performing Agents -->
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-trophy me-2"></i>Top Agents
+                    </h5>
+                    <a href="{% url 'crm:agents' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if top_agents %}
+                    <div class="list-group list-group-flush">
+                        {% for agent in top_agents %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                {% if agent.profile_picture %}
+                                <img src="{{ agent.profile_picture.url }}" alt="{{ agent.full_name }}" 
+                                     class="rounded-circle me-3" width="40" height="40">
+                                {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
+                                     style="width: 40px; height: 40px;">
+                                    <span class="text-white fw-bold">{{ agent.first_name.0 }}{{ agent.last_name.0 }}</span>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <a href="{% url 'crm:agent_detail' agent.id %}" class="text-decoration-none fw-bold">
+                                        {{ agent.full_name }}
+                                    </a>
+                                    <div class="small text-muted">
+                                        <i class="bi bi-{{ agent.agent_type|yesno:'robot,person' }} me-1"></i>
+                                        {{ agent.get_agent_type_display }}
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ agent.client_count }} clients</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-people text-muted fs-1"></i>
+                        <p class="text-muted mt-2">No agents found</p>
+                        <a href="{% url 'crm:agent_add' %}" class="btn btn-primary">Add First Agent</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Clients -->
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-plus me-2"></i>Recent Clients
+                    </h5>
+                    <a href="{% url 'crm:clients' %}" class="btn btn-sm btn-outline-success">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_clients %}
+                    <div class="list-group list-group-flush">
+                        {% for client in recent_clients %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <a href="{% url 'crm:client_detail' client.id %}" class="text-decoration-none fw-bold">
+                                        {{ client.client_name }}
+                                    </a>
+                                    {% if client.company_name %}
+                                    <div class="small text-muted">{{ client.company_name }}</div>
+                                    {% endif %}
+                                    <div class="small text-muted">
+                                        <i class="bi bi-calendar me-1"></i>{{ client.created_at|date:"M d, Y" }}
+                                    </div>
+                                </div>
+                                <span class="badge bg-{{ client.status|yesno:'success,warning,secondary' }} ms-2">
+                                    {{ client.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-briefcase text-muted fs-1"></i>
+                        <p class="text-muted mt-2">No clients found</p>
+                        <a href="{% url 'crm:client_add' %}" class="btn btn-success">Add First Client</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'crm:agent_add' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-person-plus me-2"></i>Register New Agent
+                        </a>
+                        <a href="{% url 'crm:client_add' %}" class="btn btn-outline-success">
+                            <i class="bi bi-briefcase-fill me-2"></i>Add New Client
+                        </a>
+                        <a href="{% url 'crm:interaction_add' %}" class="btn btn-outline-info">
+                            <i class="bi bi-chat-dots me-2"></i>Log Interaction
+                        </a>
+                        <a href="{% url 'crm:performance' %}" class="btn btn-outline-warning">
+                            <i class="bi bi-graph-up me-2"></i>View Performance
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+</style>
+{% endblock %}

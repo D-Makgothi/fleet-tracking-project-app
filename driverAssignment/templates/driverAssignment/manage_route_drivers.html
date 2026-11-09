@@ -1,0 +1,101 @@
+{% extends 'driverAssignment/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'main:route_list' %}" class="btn btn-secondary">Back to Route Management</a>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Route Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Route Name:</strong> {{ route.route_name }}</p>
+                    <p><strong>Start:</strong> {{ route.start }}</p>
+                    <p><strong>Finish:</strong> {{ route.finish }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Transport Rate:</strong> R{{ route.transport_rate|floatformat:2 }} per ton</p>
+                    <p><strong>Status:</strong> 
+                        {% if route.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Created:</strong> {{ route.created_at|date:"M d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if current_assignments %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Currently Assigned Drivers</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for assignment in current_assignments %}
+                <div class="col-md-6 col-lg-4 mb-2">
+                    <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                        <div>
+                            <a href="{% url 'driverAssignment:driver_detail' assignment.driver.id %}" 
+                               class="text-decoration-none text-primary">
+                                <strong>{{ assignment.driver.user.username }}</strong>
+                            </a><br>
+                            <small class="text-muted">Assigned: {{ assignment.assigned_date|date:"M d, Y" }}</small>
+                        </div>
+                        <a href="{% url 'driverAssignment:remove_assignment' assignment.id %}" 
+                           class="btn btn-sm btn-outline-danger" title="Remove">
+                            <i class="bi bi-x"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Manage Driver Assignments</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">{{ form.drivers.label }}</label>
+                    <div class="row">
+                        {% for choice in form.drivers %}
+                        <div class="col-md-6 col-lg-4 mb-2">
+                            <div class="form-check">
+                                {{ choice.tag }}
+                                {{ choice.choice_label }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.drivers.help_text %}
+                        <div class="form-text">{{ form.drivers.help_text }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Update Assignments
+                    </button>
+                    <a href="{% url 'main:route_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

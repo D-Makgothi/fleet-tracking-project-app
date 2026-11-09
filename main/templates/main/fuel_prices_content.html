@@ -1,0 +1,870 @@
+<!-- Fuel Prices Content
+     Rendered standalone inside fuel_prices_analytics.html (full page) and injected via AJAX
+     into the Analytics dashboard "Fuel Prices" tab. All classes are prefixed with `fp-`
+     so nothing here leaks into the host page. -->
+<style>
+.fp {
+    --fp-text: #1e293b;
+    --fp-muted: #64748b;
+    --fp-subtle: #94a3b8;
+    --fp-border: #e2e8f0;
+    --fp-surface: #ffffff;
+    --fp-surface-alt: #f8fafc;
+    --fp-primary: #2563eb;
+    --fp-violet: #7c3aed;
+    --fp-success: #10b981;
+    --fp-warning: #f59e0b;
+    --fp-danger: #ef4444;
+    --fp-info: #0ea5e9;
+    --fp-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: var(--fp-text);
+}
+
+/* ---------- Header ---------- */
+.fp-header {
+    background: var(--fp-surface);
+    border: 1px solid var(--fp-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.fp-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--fp-gradient);
+}
+.fp-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.fp-header-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.fp-header-icon {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background: var(--fp-gradient);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+.fp-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.15rem 0;
+    color: var(--fp-text) !important;
+}
+.fp-header p { margin: 0; color: var(--fp-muted); }
+.fp-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.fp-actions .btn { border-radius: 8px; font-weight: 500; }
+
+.fp-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+.fp-stat {
+    background: var(--fp-surface-alt);
+    border: 1px solid var(--fp-border);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+.fp-stat-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    color: var(--fp-accent);
+    background: color-mix(in srgb, var(--fp-accent) 12%, transparent);
+}
+.fp-stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--fp-text);
+    font-variant-numeric: tabular-nums;
+}
+.fp-stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fp-muted);
+}
+
+/* ---------- Section titles ---------- */
+.fp-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fp-muted);
+    margin: 0 0 0.85rem 0;
+}
+.fp-section-title > span { display: inline-flex; align-items: center; gap: 0.5rem; }
+.fp-section-title small {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    color: var(--fp-subtle);
+}
+
+/* ---------- Price cards ---------- */
+.fp-price {
+    --fp-accent: var(--fp-primary);
+    background: var(--fp-surface);
+    border: 1px solid var(--fp-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    padding: 1.4rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    animation: fpFadeUp 0.5s ease both;
+}
+.fp-price::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--fp-accent);
+}
+.fp-price:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    border-color: color-mix(in srgb, var(--fp-accent) 45%, var(--fp-border));
+}
+.fp-price.p93  { --fp-accent: var(--fp-success); }
+.fp-price.p95  { --fp-accent: var(--fp-info); }
+.fp-price.d50  { --fp-accent: var(--fp-warning); }
+.fp-price.d500 { --fp-accent: var(--fp-danger); }
+
+.fp-price-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.fp-price-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--fp-text) !important;
+}
+.fp-price-sub { font-size: 0.8rem; color: var(--fp-muted); margin: 0.1rem 0 0; }
+.fp-price-icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: var(--fp-accent);
+    background: color-mix(in srgb, var(--fp-accent) 12%, transparent);
+}
+.fp-price-main {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.fp-price-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--fp-text);
+    font-variant-numeric: tabular-nums;
+}
+.fp-price-value .cur { font-size: 1.1rem; font-weight: 600; color: var(--fp-muted); margin-right: 0.1rem; }
+.fp-price-unit { font-size: 0.8rem; color: var(--fp-subtle); }
+.fp-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    color: var(--fp-muted);
+    background: #f1f5f9;
+}
+.fp-delta.up   { color: #b91c1c; background: #fee2e2; }
+.fp-delta.down { color: #047857; background: #d1fae5; }
+.fp-price-caption { font-size: 0.75rem; color: var(--fp-subtle); margin-top: 0.3rem; }
+.fp-regions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: 1.1rem;
+}
+.fp-region {
+    background: var(--fp-surface-alt);
+    border: 1px solid var(--fp-border);
+    border-radius: 10px;
+    padding: 0.55rem 0.75rem;
+}
+.fp-region-label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--fp-subtle);
+}
+.fp-region-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--fp-text);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Panels ---------- */
+.fp-panel {
+    background: var(--fp-surface);
+    border: 1px solid var(--fp-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.fp-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--fp-border);
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+.fp-panel-head h5 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--fp-text) !important;
+}
+.fp-panel-head h5 i { color: var(--fp-primary); }
+.fp-panel-head a { font-size: 0.8rem; font-weight: 500; text-decoration: none; }
+.fp-panel-body { padding: 1.5rem; flex: 1; }
+.fp-chart-wrap { position: relative; height: 300px; }
+.fp-chart-wrap.sm { height: 260px; }
+
+/* Fleet rate highlight */
+.fp-rate {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(124, 58, 237, 0.08));
+    border: 1px solid rgba(124, 58, 237, 0.2);
+    margin-bottom: 1.25rem;
+}
+.fp-rate-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--fp-text);
+    font-variant-numeric: tabular-nums;
+}
+.fp-rate-value .cur { font-size: 1.1rem; color: var(--fp-muted); margin-right: 0.1rem; }
+.fp-rate-meta { font-size: 0.85rem; color: var(--fp-muted); }
+.fp-rate-meta strong { display: block; color: var(--fp-text); font-size: 0.95rem; }
+.fp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    color: #047857;
+    background: #d1fae5;
+}
+.fp-compare { list-style: none; padding: 0; margin: 0; }
+.fp-compare li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+}
+.fp-compare li:last-child { border-bottom: none; }
+.fp-compare .label { color: var(--fp-muted); display: flex; align-items: center; gap: 0.5rem; }
+.fp-compare .val { font-weight: 600; color: var(--fp-text); font-variant-numeric: tabular-nums; }
+
+.fp-empty {
+    text-align: center;
+    color: var(--fp-muted);
+    padding: 1.5rem 0;
+}
+.fp-empty i { font-size: 2rem; color: var(--fp-subtle); display: block; margin-bottom: 0.5rem; }
+
+/* Recent changes */
+.fp-history { list-style: none; padding: 0; margin: 0; }
+.fp-history li {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.fp-history li:last-child { border-bottom: none; }
+.fp-history-dot {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fp-violet);
+    background: rgba(124, 58, 237, 0.1);
+}
+.fp-history li.active .fp-history-dot { color: var(--fp-success); background: rgba(16, 185, 129, 0.12); }
+.fp-history-main { flex: 1; min-width: 0; }
+.fp-history-name {
+    font-size: 0.9rem;
+    color: var(--fp-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fp-history-date { font-size: 0.75rem; color: var(--fp-subtle); }
+.fp-history-rate { font-weight: 600; color: var(--fp-text); font-variant-numeric: tabular-nums; }
+
+.fp-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--fp-muted);
+    margin: -0.25rem 0 1.5rem;
+}
+
+@keyframes fpFadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.fp-prices > div:nth-child(2) .fp-price { animation-delay: 0.08s; }
+.fp-prices > div:nth-child(3) .fp-price { animation-delay: 0.16s; }
+.fp-prices > div:nth-child(4) .fp-price { animation-delay: 0.24s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-price { animation: none; }
+    .fp-price:hover { transform: none; }
+}
+
+@media (max-width: 768px) {
+    .fp-header { padding: 1.25rem; }
+    .fp-header-top { flex-direction: column; align-items: flex-start; }
+    .fp-panel-body { padding: 1.1rem; }
+    .fp-chart-wrap, .fp-chart-wrap.sm { height: 230px; }
+}
+</style>
+
+<div class="fp">
+    <!-- Header -->
+    <div class="fp-header">
+        <div class="fp-header-top">
+            <div class="fp-header-title">
+                <div class="fp-header-icon"><i class="bi bi-fuel-pump"></i></div>
+                <div>
+                    <h2>Fuel Prices</h2>
+                    <p>South African pump prices and your fleet's internal fuel rate</p>
+                </div>
+            </div>
+            <div class="fp-actions">
+                <a href="{% url 'main:fuel_rate_management' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-sliders me-1"></i>Manage fleet rate
+                </a>
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="fp-stats">
+            <div class="fp-stat" style="--fp-accent: var(--fp-violet);">
+                <div class="fp-stat-icon"><i class="bi bi-truck"></i></div>
+                <div>
+                    <div class="fp-stat-value">{% if current_rate %}R{{ current_rate.fuel_rate }}{% else %}—{% endif %}</div>
+                    <div class="fp-stat-label">Fleet rate / L</div>
+                </div>
+            </div>
+            {% if live_fuel_price %}
+            <div class="fp-stat" style="--fp-accent: var(--fp-warning);">
+                <div class="fp-stat-icon"><i class="bi bi-droplet"></i></div>
+                <div>
+                    <div class="fp-stat-value">R{{ live_fuel_price.diesel_005_inland }}</div>
+                    <div class="fp-stat-label">Diesel 50ppm inland</div>
+                </div>
+            </div>
+            <div class="fp-stat" style="--fp-accent: var(--fp-primary);">
+                <div class="fp-stat-icon"><i class="bi bi-arrow-left-right"></i></div>
+                <div>
+                    <div class="fp-stat-value" id="fpRateGap">—</div>
+                    <div class="fp-stat-label">Fleet rate vs diesel</div>
+                </div>
+            </div>
+            <div class="fp-stat" style="--fp-accent: var(--fp-success);">
+                <div class="fp-stat-icon"><i class="bi bi-clock-history"></i></div>
+                <div>
+                    <div class="fp-stat-value" style="font-size: 0.95rem;">{{ live_fuel_price.last_updated }}</div>
+                    <div class="fp-stat-label">Prices updated</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Live pump prices -->
+    {% if live_fuel_price %}
+    <h6 class="fp-section-title">
+        <span><i class="bi bi-geo-alt"></i>Current pump prices</span>
+        <small>Change vs previous week · inland</small>
+    </h6>
+    <div class="row g-3 mb-2 fp-prices">
+        <div class="col-sm-6 col-xl-3">
+            <div class="fp-price p93">
+                <div class="fp-price-head">
+                    <div>
+                        <h5 class="fp-price-name">Petrol 93</h5>
+                        <p class="fp-price-sub">Unleaded (ULP)</p>
+                    </div>
+                    <div class="fp-price-icon"><i class="bi bi-fuel-pump"></i></div>
+                </div>
+                <div class="fp-price-main">
+                    <span class="fp-price-value"><span class="cur">R</span>{{ live_fuel_price.petrol_93_inland }}</span>
+                    <span class="fp-delta" data-fp-delta="petrol_93">—</span>
+                </div>
+                <div class="fp-price-caption">per litre · inland</div>
+                <div class="fp-regions">
+                    <div class="fp-region">
+                        <div class="fp-region-label"><i class="bi bi-signpost"></i>Inland</div>
+                        <div class="fp-region-value">R{{ live_fuel_price.petrol_93_inland }}</div>
+                    </div>
+                    <div class="fp-region">
+                        <div class="fp-region-label"><i class="bi bi-water"></i>Coast</div>
+                        <div class="fp-region-value">R{{ live_fuel_price.petrol_93_coast }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="fp-price p95">
+                <div class="fp-price-head">
+                    <div>
+                        <h5 class="fp-price-name">Petrol 95</h5>
+                        <p class="fp-price-sub">Unleaded (ULP)</p>
+                    </div>
+                    <div class="fp-price-icon"><i class="bi bi-fuel-pump-fill"></i></div>
+                </div>
+                <div class="fp-price-main">
+                    <span class="fp-price-value"><span class="cur">R</span>{{ live_fuel_price.petrol_95_inland }}</span>
+                    <span class="fp-delta" data-fp-delta="petrol_95">—</span>
+                </div>
+                <div class="fp-price-caption">per litre · inland</div>
+                <div class="fp-regions">
+                    <div class="fp-region">
+                        <div class="fp-region-label"><i class="bi bi-signpost"></i>Inland</div>
+                        <div class="fp-region-value">R{{ live_fuel_price.petrol_95_inland }}</div>
+                    </div>
+                    <div class="fp-region">
+                        <div class="fp-region-label"><i class="bi bi-water"></i>Coast</div>
+                        <div class="fp-region-value">R{{ live_fuel_price.petrol_95_coast }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="fp-price d50">
+                <div class="fp-price-head">
+                    <div>
+                        <h5 class="fp-price-name">Diesel 0.005%</h5>
+                        <p class="fp-price-sub">50ppm</p>
+                    </div>
+                    <div class="fp-price-icon"><i class="bi bi-truck"></i></div>
+                </div>
+                <div class="fp-price-main">
+                    <span class="fp-price-value"><span class="cur">R</span>{{ live_fuel_price.diesel_005_inland }}</span>
+                    <span class="fp-delta" data-fp-delta="diesel_005">—</span>
+                </div>
+                <div class="fp-price-caption">per litre · inland</div>
+                <div class="fp-regions">
+                    <div class="fp-region">
+                        <div class="fp-region-label"><i class="bi bi-signpost"></i>Inland</div>
+                        <div class="fp-region-value">R{{ live_fuel_price.diesel_005_inland }}</div>
+                    </div>
+                    <div class="fp-region">
+                        <div class="fp-region-label"><i class="bi bi-water"></i>Coast</div>
+                        <div class="fp-region-value">R{{ live_fuel_price.diesel_005_coast }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="fp-price d500">
+                <div class="fp-price-head">
+                    <div>
+                        <h5 class="fp-price-name">Diesel 0.05%</h5>
+                        <p class="fp-price-sub">500ppm</p>
+                    </div>
+                    <div class="fp-price-icon"><i class="bi bi-truck-front"></i></div>
+                </div>
+                <div class="fp-price-main">
+                    <span class="fp-price-value"><span class="cur">R</span>{{ live_fuel_price.diesel_05_inland }}</span>
+                    <span class="fp-delta" data-fp-delta="diesel_05">—</span>
+                </div>
+                <div class="fp-price-caption">per litre · inland</div>
+                <div class="fp-regions">
+                    <div class="fp-region">
+                        <div class="fp-region-label"><i class="bi bi-signpost"></i>Inland</div>
+                        <div class="fp-region-value">R{{ live_fuel_price.diesel_05_inland }}</div>
+                    </div>
+                    <div class="fp-region">
+                        <div class="fp-region-label"><i class="bi bi-water"></i>Coast</div>
+                        <div class="fp-region-value">R{{ live_fuel_price.diesel_05_coast }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="fp-note mt-2"><i class="bi bi-info-circle"></i>Prices last updated {{ live_fuel_price.last_updated }}.</div>
+    {% endif %}
+
+    <!-- Fleet rate + recent changes -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="fp-panel">
+                <div class="fp-panel-head">
+                    <h5><i class="bi bi-truck"></i>Current fleet rate</h5>
+                    <a href="{% url 'main:fuel_rate_management' %}">Manage <i class="bi bi-arrow-right-short"></i></a>
+                </div>
+                <div class="fp-panel-body">
+                    {% if current_rate %}
+                    <div class="fp-rate">
+                        <div class="fp-rate-value"><span class="cur">R</span>{{ current_rate.fuel_rate }}</div>
+                        <div class="fp-rate-meta">
+                            <strong>{{ current_rate.name }}</strong>
+                            Set {{ current_rate.created_at|date:"j M Y, H:i" }}
+                        </div>
+                        <span class="fp-badge ms-auto"><i class="bi bi-check-circle-fill"></i>Active</span>
+                    </div>
+                    {% if live_fuel_price %}
+                    <h6 class="fp-section-title"><span><i class="bi bi-arrow-left-right"></i>Compared to pump prices</span></h6>
+                    <ul class="fp-compare">
+                        <li><span class="label"><i class="bi bi-truck"></i>Diesel 50ppm inland</span><span class="val" data-fp-gap="{{ live_fuel_price.diesel_005_inland }}">—</span></li>
+                        <li><span class="label"><i class="bi bi-water"></i>Diesel 50ppm coast</span><span class="val" data-fp-gap="{{ live_fuel_price.diesel_005_coast }}">—</span></li>
+                        <li><span class="label"><i class="bi bi-fuel-pump"></i>Petrol 93 inland</span><span class="val" data-fp-gap="{{ live_fuel_price.petrol_93_inland }}">—</span></li>
+                    </ul>
+                    {% endif %}
+                    {% else %}
+                    <div class="fp-empty">
+                        <i class="bi bi-slash-circle"></i>
+                        No active fuel rate set.
+                        <div class="mt-3">
+                            <a href="{% url 'main:fuel_rate_management' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Set a fleet rate</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="fp-panel">
+                <div class="fp-panel-head">
+                    <h5><i class="bi bi-clock-history"></i>Recent rate changes</h5>
+                </div>
+                <div class="fp-panel-body">
+                    {% if historical_rates %}
+                    <ul class="fp-history">
+                        {% for rate in historical_rates|slice:":5" %}
+                        <li class="{% if rate.is_active %}active{% endif %}">
+                            <div class="fp-history-dot"><i class="bi {% if rate.is_active %}bi-check2-circle{% else %}bi-receipt{% endif %}"></i></div>
+                            <div class="fp-history-main">
+                                <div class="fp-history-name">{{ rate.name }}</div>
+                                <div class="fp-history-date">{{ rate.created_at|date:"j M Y" }}</div>
+                            </div>
+                            {% if rate.is_active %}<span class="fp-badge">Active</span>{% endif %}
+                            <div class="fp-history-rate">R{{ rate.fuel_rate }}</div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="fp-empty"><i class="bi bi-inbox"></i>No rate history yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-7">
+            <div class="fp-panel">
+                <div class="fp-panel-head">
+                    <h5><i class="bi bi-graph-up"></i>National pump price trend</h5>
+                </div>
+                <div class="fp-panel-body">
+                    <div class="fp-chart-wrap">
+                        <canvas id="nationalFuelPricesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-5">
+            <div class="fp-panel">
+                <div class="fp-panel-head">
+                    <h5><i class="bi bi-activity"></i>Fleet rate history</h5>
+                </div>
+                <div class="fp-panel-body">
+                    <div class="fp-chart-wrap">
+                        <canvas id="fleetFuelRateChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var historicalPrices = {{ historical_prices_json|safe }} || [];
+    // fuel_data comes newest-first from the view; charts read left-to-right in time
+    var fuelData = ({{ fuel_data|safe }} || []).slice().reverse();
+    var fleetRate = {% if current_rate %}{{ current_rate.fuel_rate|stringformat:"s" }}{% else %}null{% endif %};
+
+    var SERIES = [
+        { key: 'petrol_93',  label: 'Petrol 93',     color: '#10b981' },
+        { key: 'petrol_95',  label: 'Petrol 95',     color: '#0ea5e9' },
+        { key: 'diesel_005', label: 'Diesel 50ppm',  color: '#f59e0b' },
+        { key: 'diesel_05',  label: 'Diesel 500ppm', color: '#ef4444' }
+    ];
+
+    function rand(v) { return 'R' + Number(v).toFixed(2); }
+
+    function fmtDate(s) {
+        var d = new Date(s + 'T00:00:00');
+        return isNaN(d) ? s : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    }
+
+    function renderDeltas() {
+        if (historicalPrices.length < 2) return;
+        var last = historicalPrices[historicalPrices.length - 1];
+        var prev = historicalPrices[historicalPrices.length - 2];
+        document.querySelectorAll('[data-fp-delta]').forEach(function (el) {
+            var key = el.getAttribute('data-fp-delta');
+            if (last[key] == null || prev[key] == null) return;
+            var diff = last[key] - prev[key];
+            var cents = Math.round(diff * 100);
+            el.classList.remove('up', 'down');
+            if (cents > 0) {
+                el.classList.add('up');
+                el.innerHTML = '<i class="bi bi-arrow-up-short"></i>' + cents + 'c';
+            } else if (cents < 0) {
+                el.classList.add('down');
+                el.innerHTML = '<i class="bi bi-arrow-down-short"></i>' + Math.abs(cents) + 'c';
+            } else {
+                el.textContent = 'No change';
+            }
+        });
+    }
+
+    function gapText(pump) {
+        var diff = fleetRate - pump;
+        var sign = diff > 0 ? '+' : diff < 0 ? '−' : '';
+        return sign + rand(Math.abs(diff));
+    }
+
+    function renderGaps() {
+        if (fleetRate === null) return;
+        document.querySelectorAll('[data-fp-gap]').forEach(function (el) {
+            var pump = parseFloat(el.getAttribute('data-fp-gap'));
+            if (!isNaN(pump)) el.textContent = gapText(pump);
+        });
+        var summary = document.getElementById('fpRateGap');
+        var diesel = {% if live_fuel_price %}parseFloat("{{ live_fuel_price.diesel_005_inland|escapejs }}"){% else %}NaN{% endif %};
+        if (summary && !isNaN(diesel)) summary.textContent = gapText(diesel);
+    }
+
+    function emptyState(canvas, msg) {
+        canvas.parentElement.innerHTML = '<div class="fp-empty"><i class="bi bi-bar-chart"></i>' + msg + '</div>';
+    }
+
+    var baseOptions = function () {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 16, color: '#475569' }
+                },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    padding: 10,
+                    cornerRadius: 8,
+                    boxPadding: 4,
+                    usePointStyle: true
+                }
+            },
+            scales: {
+                y: {
+                    grace: '10%',
+                    border: { display: false },
+                    grid: { color: '#f1f5f9' },
+                    ticks: { color: '#64748b', callback: function (v) { return rand(v); } }
+                },
+                x: {
+                    border: { display: false },
+                    grid: { display: false },
+                    ticks: { color: '#64748b' }
+                }
+            }
+        };
+    };
+
+    function destroyExisting(canvas) {
+        var existing = Chart.getChart ? Chart.getChart(canvas) : null;
+        if (existing) existing.destroy();
+    }
+
+    function renderNationalChart() {
+        var canvas = document.getElementById('nationalFuelPricesChart');
+        if (!canvas) return;
+        if (!historicalPrices.length) return emptyState(canvas, 'No price history available');
+        destroyExisting(canvas);
+
+        var opts = baseOptions();
+        opts.plugins.tooltip.callbacks = {
+            label: function (ctx) { return ' ' + ctx.dataset.label + ': ' + rand(ctx.parsed.y); }
+        };
+
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: historicalPrices.map(function (p) { return fmtDate(p.date); }),
+                datasets: SERIES.map(function (s) {
+                    return {
+                        label: s.label,
+                        data: historicalPrices.map(function (p) { return p[s.key]; }),
+                        borderColor: s.color,
+                        backgroundColor: s.color,
+                        borderWidth: 2.5,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: '#fff',
+                        pointBorderWidth: 2
+                    };
+                })
+            },
+            options: opts
+        });
+    }
+
+    function renderFleetChart() {
+        var canvas = document.getElementById('fleetFuelRateChart');
+        if (!canvas) return;
+        if (!fuelData.length) return emptyState(canvas, 'No fleet rate history yet');
+        destroyExisting(canvas);
+
+        var ctx = canvas.getContext('2d');
+        var fill = ctx.createLinearGradient(0, 0, 0, 260);
+        fill.addColorStop(0, 'rgba(124, 58, 237, 0.25)');
+        fill.addColorStop(1, 'rgba(124, 58, 237, 0)');
+
+        var opts = baseOptions();
+        opts.plugins.legend.display = false;
+        opts.plugins.tooltip.callbacks = {
+            title: function (items) { return fuelData[items[0].dataIndex].name; },
+            label: function (c) { return ' ' + rand(c.parsed.y) + ' per litre'; },
+            afterLabel: function (c) { return ' ' + fmtDate(fuelData[c.dataIndex].date); }
+        };
+
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: fuelData.map(function (d) { return fmtDate(d.date); }),
+                datasets: [{
+                    label: 'Fleet rate',
+                    data: fuelData.map(function (d) { return d.rate; }),
+                    borderColor: '#7c3aed',
+                    backgroundColor: fill,
+                    fill: true,
+                    borderWidth: 2.5,
+                    tension: 0.35,
+                    stepped: false,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#7c3aed',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: opts
+        });
+    }
+
+    function init() {
+        renderDeltas();
+        renderGaps();
+        if (typeof Chart === 'undefined') return;
+        renderNationalChart();
+        renderFleetChart();
+    }
+
+    // On the full page this runs before base.html loads Chart.js, so wait for the DOM;
+    // when injected via AJAX the page is already loaded, so run immediately.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>

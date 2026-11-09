@@ -1,0 +1,60 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Driver Cost Reports{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Driver Cost Reports</h2>
+        <a href="{% url 'main:cost' %}" class="btn btn-secondary">Back to Cost Reports</a>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Search by driver name or vehicle registration..." 
+                           value="{{ search_query }}">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    {% if search_query %}
+                        <a href="{% url 'main:driver_cost_list' %}" class="btn btn-outline-secondary">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <p>Select a driver to view their individual cost reports:</p>
+    
+    <div class="row">
+        {% for driver in drivers %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ driver.user.username }}</h5>
+                    <p class="card-text">
+                        <strong>Mine:</strong> {{ driver.mine|default:"Not assigned" }}<br>
+                        <strong>Vehicle Registration:</strong> {{ driver.vehicle_registration_no|default:"Not assigned" }}<br>
+                        <strong>Fleet Cam:</strong> {{ driver.fleetcam_link|default:"Not assigned" }}
+                    </p>
+                    <a href="{% url 'main:driver_cost' driver.id %}" class="btn btn-primary">View Cost Reports</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                {% if search_query %}
+                    No drivers found matching "{{ search_query }}".
+                {% else %}
+                    No drivers found in the system.
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

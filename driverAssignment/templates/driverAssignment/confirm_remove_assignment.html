@@ -1,0 +1,42 @@
+{% extends 'driverAssignment/base.html' %}
+
+{% block title %}Confirm Remove Assignment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0 text-dark">
+                        <i class="bi bi-exclamation-triangle"></i> Confirm Removal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Are you sure you want to remove <strong>{{ assignment.driver.user.username }}</strong> from route <strong>{{ assignment.route.route_name }}</strong>?</p>
+                    
+                    <div class="alert alert-info">
+                        <strong>Assignment Details:</strong><br>
+                        <strong>Driver:</strong> {{ assignment.driver.user.username }}<br>
+                        <strong>Route:</strong> {{ assignment.route.route_name }} ({{ assignment.route.start }} to {{ assignment.route.finish }})<br>
+                        <strong>Assigned:</strong> {{ assignment.assigned_date|date:"M d, Y" }}<br>
+                        {% if assignment.notes %}
+                        <strong>Notes:</strong> {{ assignment.notes }}
+                        {% endif %}
+                    </div>
+                    
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Yes, Remove Assignment
+                        </button>
+                    </form>
+                    <a href="{% url 'driverAssignment:manage_route_drivers' assignment.route.id %}" class="btn btn-outline-secondary ms-2">
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

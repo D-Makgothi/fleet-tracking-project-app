@@ -1,0 +1,101 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Revenue Report - {{ driver.user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Revenue Report for {{ driver.user.username }}</h2>
+        <div>
+            <a href="{% url 'main:export_driver_revenue_excel' driver.id %}" 
+               class="btn btn-success me-2">
+                <i class="bi bi-file-earmark-excel"></i> Export to Excel
+            </a>
+            <a href="{% url 'main:driver_revenue_list' %}" class="btn btn-secondary">Back to Driver List</a>
+        </div>
+    </div>
+    
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5>Driver Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Username:</strong> {{ driver.user.username }}</p>
+                    <p><strong>Mine:</strong> {{ driver.mine|default:"Not assigned" }}</p>
+                    <p><strong>Driver License:</strong> {{ driver.driver_license_no|default:"Not provided" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>First Name:</strong> {{ driver.user.first_name|default:"Not provided" }}</p>
+                    <p><strong>Last Name:</strong> {{ driver.user.last_name|default:"Not provided" }}</p>
+                    <p><strong>Email:</strong> {{ driver.user.email|default:"Not provided" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Fleet Number</th>
+                <th>Vehicle Number</th>
+                <th>Number of Loads</th>
+                <th>Tonnage</th>
+                <th>Completed Routes</th>
+                <th>Revenue</th>
+                <th>Planned Revenue</th>
+                <th>Variance</th>
+                <th>Predicted Revenue</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for table_count in table_data %}
+            <tr>
+                <td>{{ table_count.fleet_no }}</td>
+                <td>{{ table_count.vehicle_no }}</td>
+                <td>{{ table_count.no_of_loads }}</td>
+                <td>{{ table_count.tonnage }}</td>
+                <td>
+                    {% for route in table_count.completed_routes.all %}
+                        <span class="badge badge-info">{{ route.route_name }}</span>
+                    {% empty %}
+                        <span class="text-info">No routes completed</span>
+                    {% endfor %}
+                </td>
+                <td class="text-success"><strong>R{{ table_count.revenue|floatformat:2 }}</strong></td>
+                <td>R{{ table_count.display_planned_revenue|floatformat:2 }}</td>
+                <td class="{% if table_count.variance < 0 %}text-danger{% else %}text-success{% endif %}">
+                    <strong>R{{ table_count.variance|floatformat:2 }}</strong>
+                </td>
+                <td class="text-info"><strong>R{{ table_count.predicted|floatformat:2 }}</strong></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" class="text-center">No revenue reports found for this driver.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        {% if table_data %}
+        <tfoot>
+            <tr class="table-info">
+                <td colspan="5"><strong>Totals</strong></td>
+                <td><strong class="text-success">R{{ total_revenue|floatformat:2 }}</strong></td>
+                <td><strong>R{{ total_planned|floatformat:2 }}</strong></td>
+                <td><strong class="{% if total_variance < 0 %}text-danger{% else %}text-success{% endif %}">
+                    R{{ total_variance|floatformat:2 }}
+                </strong></td>
+                <td><strong class="text-info">R{{ total_predicted|floatformat:2 }}</strong></td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+
+    {% if table_data %}
+    <form method="POST" class="mt-3">
+        {% csrf_token %}
+        <button type="submit" name="clear" class="btn btn-danger" onclick="return confirm('Are you sure you want to clear all revenue reports for this driver?')">Clear Driver Reports</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

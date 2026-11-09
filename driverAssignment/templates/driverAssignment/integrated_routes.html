@@ -1,0 +1,119 @@
+{% extends 'driverAssignment/base.html' %}
+
+{% block title %}Route Management & Driver Assignment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Route Management & Driver Assignment</h2>
+        <div>
+            <a href="{% url 'driverAssignment:assign_driver' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Assign Driver to Route
+            </a>
+            <a href="{% url 'main:route_list' %}" class="btn btn-outline-secondary">Route Management</a>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Search routes..." 
+                           value="{{ search_query }}">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    {% if search_query %}
+                        <a href="{% url 'driverAssignment:integrated_routes' %}" class="btn btn-outline-secondary">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if routes_with_assignments %}
+        <div class="card">
+            <div class="card-header">
+                <h5>Active Routes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Route Name</th>
+                                <th>Start</th>
+                                <th>Finish</th>
+                                <th>Transport Rate</th>
+                                <th>Assigned Drivers</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in routes_with_assignments %}
+                            <tr>
+                                <td><strong>{{ item.route.route_name }}</strong></td>
+                                <td>{{ item.route.start }}</td>
+                                <td>{{ item.route.finish }}</td>
+                                <td>R{{ item.route.transport_rate|floatformat:2 }}</td>
+                                <td>
+                                    {% if item.assigned_drivers_count > 0 %}
+                                        <a href="{% url 'driverAssignment:route_assigned_drivers' item.route.id %}" 
+                                           class="badge bg-info text-decoration-none">
+                                            {{ item.assigned_drivers_count }} driver{{ item.assigned_drivers_count|pluralize }}
+                                        </a>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            No drivers assigned
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'driverAssignment:manage_route_drivers' item.route.id %}" 
+                                           class="btn btn-outline-primary" title="Manage Drivers">
+                                            <i class="bi bi-people"></i>
+                                        </a>
+                                        <a href="{% url 'driverAssignment:assign_driver_to_route' item.route.id %}" 
+                                           class="btn btn-outline-success" title="Add Driver">
+                                            <i class="bi bi-plus"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-signpost-2 fs-1 text-muted"></i>
+                <h4 class="text-muted mt-3">
+                    {% if search_query %}
+                        No Routes Found Matching "{{ search_query }}"
+                    {% else %}
+                        No Active Routes Found
+                    {% endif %}
+                </h4>
+                <p class="text-muted">
+                    {% if search_query %}
+                        Try adjusting your search criteria or clear the search.
+                    {% else %}
+                        Create routes in the Route Management section first.
+                    {% endif %}
+                </p>
+                {% if search_query %}
+                    <a href="{% url 'driverAssignment:integrated_routes' %}" class="btn btn-outline-secondary me-2">Clear Search</a>
+                {% endif %}
+                <a href="{% url 'main:route_add' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create Route
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

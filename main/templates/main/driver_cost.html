@@ -1,0 +1,87 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Cost Report - {{ driver.user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Cost Report for {{ driver.user.username }}</h2>
+        <div>
+            <a href="{% url 'main:export_driver_costs_excel' driver.id %}" 
+               class="btn btn-success me-2">
+                <i class="bi bi-file-earmark-excel"></i> Export to Excel
+            </a>
+            <a href="{% url 'main:driver_cost_list' %}" class="btn btn-secondary">Back to Driver List</a>
+        </div>
+    </div>
+    
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5>Driver Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Username:</strong> {{ driver.user.username }}</p>
+                    <p><strong>Mine:</strong> {{ driver.mine|default:"Not assigned" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Fleet Cam:</strong> {{ driver.fleetcam_link|default:"Not assigned" }}</p>
+                    <p><strong>Driver License:</strong> {{ driver.driver_license_no|default:"Not provided" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Fleet Number</th>
+                <th>Date</th>
+                <th>Slip Number</th>
+                <th>Fuel Requested [Litres]</th>
+                <th>Fuel Cost</th>
+                <th>Imported Costs</th>
+                <th>Total Cost</th>
+                <th>Predicted Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for table_count in table_data %}
+            <tr>
+                <td>{{ table_count.fleet_no }}</td>
+                <td>{{ table_count.date }}</td>
+                <td>{{ table_count.slip_no }}</td>
+                <td>{{ table_count.fuel_requested }}</td>
+                <td>R{{ table_count.fuel_cost|floatformat:2 }}</td>
+                <td>R{{ table_count.imported_costs|default:0|floatformat:2 }}</td>
+                <td>R{{ table_count.actual_cost|floatformat:2 }}</td>
+                <td>R{{ table_count.calculated_predicted_cost|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center">No cost reports found for this driver.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        {% if table_data %}
+        <tfoot>
+            <tr class="table-info">
+                <td colspan="4"><strong>Totals</strong></td>
+                <td><strong>R{{ total_fuel_cost|floatformat:2 }}</strong></td>
+                <td><strong>R{{ total_imported_costs|floatformat:2 }}</strong></td>
+                <td><strong>R{{ total_cost|floatformat:2 }}</strong></td>
+                <td><strong>R{{ total_predicted_cost|floatformat:2 }}</strong></td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+
+    {% if table_data %}
+    <form method="POST" class="mt-3">
+        {% csrf_token %}
+        <button type="submit" name="clear" class="btn btn-danger" onclick="return confirm('Are you sure you want to clear all cost reports for this driver?')">Clear Driver Reports</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+# Django Fleet Management System Requirements
+# Core Django dependencies
+Django==5.1
+asgiref==3.9.1
+sqlparse==0.3.1
+tzdata==2025.2
+
+# Database support
+# Note: SQLite is included with Python, but for production consider:
+# psycopg2-binary==2.9.7  # For PostgreSQL
+# mysqlclient==2.1.1      # For MySQL
+
+# Excel export functionality
+openpyxl==3.1.5
+et_xmlfile==2.0.0
+
+# Date and time utilities
+python-dateutil==2.9.0.post0
+pytz==2020.1
+
+# Form and UI enhancements
+django-crispy-forms==2.3
+crispy-bootstrap5==2024.2
+django-widget-tweaks==1.4.8
+
+# Development and debugging tools (optional)
+django-extensions==3.2.3
+
+# Web requests (for external integrations if needed)
+requests==2.32.3
+urllib3==2.3.0
+certifi==2025.1.31
+charset-normalizer==3.4.1
+idna==3.10
+
+# Image processing (for vehicle photos, etc.)
+pillow==11.1.0
+
+# Phone number handling
+django-phonenumber-field==8.0.0
+phonenumbers==8.13.43
+
+# Windows-specific packages (optional, only if running on Windows)
+# pywin32==308
+# pypiwin32==223
+# win10toast==0.9
+
+# Additional utilities
+six==1.17.0
+packaging==24.2

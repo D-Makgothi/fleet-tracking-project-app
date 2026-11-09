@@ -1,0 +1,881 @@
+<!-- Weather Dashboard Content
+     Rendered standalone inside weather_widget.html (full page) and injected via AJAX
+     into the Analytics dashboard "Weather" tab. All classes are prefixed with `wx-`
+     so nothing here leaks into the host page. -->
+<style>
+.wx {
+    --wx-text: #1e293b;
+    --wx-muted: #64748b;
+    --wx-subtle: #94a3b8;
+    --wx-border: #e2e8f0;
+    --wx-surface: #ffffff;
+    --wx-surface-alt: #f8fafc;
+    --wx-primary: #2563eb;
+    --wx-violet: #7c3aed;
+    --wx-success: #10b981;
+    --wx-warning: #f59e0b;
+    --wx-danger: #ef4444;
+    --wx-info: #0ea5e9;
+    --wx-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: var(--wx-text);
+}
+
+/* ---------- Header ---------- */
+.wx-header {
+    background: var(--wx-surface);
+    border: 1px solid var(--wx-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.wx-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--wx-gradient);
+}
+.wx-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.wx-header-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.wx-header-icon {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background: var(--wx-gradient);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+.wx-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.15rem 0;
+    color: var(--wx-text) !important;
+}
+.wx-header p {
+    margin: 0;
+    color: var(--wx-muted);
+}
+.wx-btn-refresh {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.wx-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+.wx-stat {
+    background: var(--wx-surface-alt);
+    border: 1px solid var(--wx-border);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+.wx-stat-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    color: var(--wx-accent);
+    background: color-mix(in srgb, var(--wx-accent) 12%, transparent);
+}
+.wx-stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--wx-text);
+}
+.wx-stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--wx-muted);
+}
+
+/* ---------- Section titles ---------- */
+.wx-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--wx-muted);
+    margin: 0 0 0.85rem 0;
+}
+
+/* ---------- Rain alerts ---------- */
+.wx-alert {
+    --wx-accent: var(--wx-warning);
+    background: var(--wx-surface);
+    border: 1px solid var(--wx-border);
+    border-left: 4px solid var(--wx-accent);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    padding: 1.1rem 3rem 1.1rem 1.25rem;
+    margin-bottom: 0.85rem;
+    position: relative;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+.wx-alert.high { --wx-accent: var(--wx-danger); }
+.wx-alert-icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    color: var(--wx-accent);
+    background: color-mix(in srgb, var(--wx-accent) 12%, transparent);
+}
+.wx-alert-body { flex: 1; min-width: 0; }
+.wx-alert-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+.wx-alert-title strong { font-size: 1rem; color: var(--wx-text); }
+.wx-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    color: var(--wx-accent);
+    background: color-mix(in srgb, var(--wx-accent) 12%, transparent);
+}
+.wx-alert-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.25rem;
+    font-size: 0.875rem;
+    color: var(--wx-muted);
+}
+.wx-alert-meta i { color: var(--wx-accent); margin-right: 0.25rem; }
+.wx-alert-advice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.65rem;
+}
+.wx-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    color: var(--wx-text);
+    background: var(--wx-surface-alt);
+    border: 1px solid var(--wx-border);
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+}
+.wx-chip i { color: var(--wx-muted); }
+.wx-alert .btn-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 0.7rem;
+}
+
+/* ---------- City cards ---------- */
+.wx-city {
+    --wx-accent: var(--wx-primary);
+    background: var(--wx-surface);
+    border: 1px solid var(--wx-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    animation: wxFadeUp 0.5s ease both;
+}
+.wx-city::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--wx-accent);
+}
+.wx-city:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    border-color: color-mix(in srgb, var(--wx-accent) 45%, var(--wx-border));
+}
+.wx-city.sunny  { --wx-accent: var(--wx-warning); }
+.wx-city.cloudy { --wx-accent: var(--wx-violet); }
+.wx-city.rainy  { --wx-accent: var(--wx-info); }
+
+.wx-city-body { padding: 1.4rem 1.4rem 1rem; flex: 1; }
+.wx-city-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+.wx-city-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--wx-text) !important;
+    margin: 0;
+}
+.wx-city-desc {
+    font-size: 0.85rem;
+    color: var(--wx-muted);
+    margin: 0.1rem 0 0 0;
+}
+.wx-city-icon {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    color: var(--wx-accent);
+    background: color-mix(in srgb, var(--wx-accent) 12%, transparent);
+}
+.wx-temp {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 1rem 0 0.15rem;
+}
+.wx-temp-value {
+    font-size: 2.6rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--wx-text);
+    letter-spacing: -0.02em;
+}
+.wx-temp-range {
+    font-size: 0.85rem;
+    color: var(--wx-muted);
+    white-space: nowrap;
+}
+.wx-temp-range .hi { color: var(--wx-danger); }
+.wx-temp-range .lo { color: var(--wx-info); }
+.wx-feels {
+    font-size: 0.8rem;
+    color: var(--wx-subtle);
+}
+.wx-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin: 1.1rem 0;
+}
+.wx-metric {
+    background: var(--wx-surface-alt);
+    border: 1px solid var(--wx-border);
+    border-radius: 10px;
+    padding: 0.55rem 0.4rem;
+    text-align: center;
+}
+.wx-metric i {
+    display: block;
+    font-size: 1rem;
+    color: var(--wx-muted);
+    margin-bottom: 0.15rem;
+}
+.wx-metric-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--wx-text);
+}
+.wx-metric-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--wx-subtle);
+}
+.wx-precip-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--wx-muted);
+    margin-bottom: 0.35rem;
+}
+.wx-precip-row strong { color: var(--wx-text); }
+.wx-progress {
+    height: 8px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    overflow: hidden;
+}
+.wx-progress-bar {
+    height: 100%;
+    border-radius: 8px;
+    background: var(--wx-gradient);
+}
+.wx-progress-bar.med  { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.wx-progress-bar.high { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.wx-rain-now {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #0369a1;
+    background: #e0f2fe;
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+}
+.wx-city-foot {
+    border-top: 1px solid var(--wx-border);
+    background: var(--wx-surface-alt);
+    padding: 0.6rem 1.4rem;
+    font-size: 0.75rem;
+    color: var(--wx-subtle);
+}
+.wx-city-error {
+    text-align: center;
+    color: var(--wx-muted);
+    padding: 1.5rem 0;
+}
+.wx-city-error i { font-size: 2rem; color: var(--wx-danger); display: block; margin-bottom: 0.5rem; }
+
+/* ---------- Panels ---------- */
+.wx-panel {
+    background: var(--wx-surface);
+    border: 1px solid var(--wx-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    overflow: hidden;
+}
+.wx-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--wx-border);
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+.wx-panel-head h5 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--wx-text) !important;
+}
+.wx-panel-head h5 i { color: var(--wx-primary); }
+.wx-panel-body { padding: 1.5rem; }
+.wx-chart-wrap { position: relative; height: 280px; }
+.wx-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--wx-muted);
+}
+.wx-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.wx-legend i {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.wx-status {
+    --wx-accent: var(--wx-success);
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+    background: color-mix(in srgb, var(--wx-accent) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--wx-accent) 30%, transparent);
+}
+.wx-status.warn { --wx-accent: var(--wx-warning); }
+.wx-status > i { font-size: 1.35rem; color: var(--wx-accent); line-height: 1.2; }
+.wx-status strong { display: block; color: var(--wx-text); }
+.wx-status span { font-size: 0.875rem; color: var(--wx-muted); }
+
+.wx-city-list { list-style: none; padding: 0; margin: 0; }
+.wx-city-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+}
+.wx-city-list li:last-child { border-bottom: none; }
+.wx-city-list .name { display: flex; align-items: center; gap: 0.5rem; color: var(--wx-text); }
+.wx-city-list .name i { color: var(--wx-muted); }
+.wx-city-list .val { font-weight: 600; color: var(--wx-text); display: flex; align-items: center; gap: 0.5rem; }
+.wx-city-list .val .bi-cloud-rain { color: var(--wx-info); }
+
+.wx-guides { list-style: none; padding: 0; margin: 0; }
+.wx-guides li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0;
+    font-size: 0.9rem;
+    color: var(--wx-text);
+}
+.wx-guides li i {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--wx-accent);
+    background: color-mix(in srgb, var(--wx-accent) 12%, transparent);
+}
+.wx-guides.warn li i { --wx-accent: var(--wx-warning); }
+.wx-guides.ok   li i { --wx-accent: var(--wx-success); }
+.wx-panel-foot {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--wx-border);
+    font-size: 0.8rem;
+    color: var(--wx-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.wx-panel-foot strong { color: var(--wx-text); font-variant-numeric: tabular-nums; }
+
+@keyframes wxFadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.wx-cities > div:nth-child(2) .wx-city { animation-delay: 0.08s; }
+.wx-cities > div:nth-child(3) .wx-city { animation-delay: 0.16s; }
+.wx-cities > div:nth-child(4) .wx-city { animation-delay: 0.24s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .wx-city { animation: none; }
+    .wx-city:hover { transform: none; }
+}
+
+@media (max-width: 768px) {
+    .wx-header { padding: 1.25rem; }
+    .wx-header-top { flex-direction: column; align-items: flex-start; }
+    .wx-temp-value { font-size: 2.2rem; }
+    .wx-panel-body { padding: 1.1rem; }
+    .wx-chart-wrap { height: 220px; }
+}
+</style>
+
+<div class="wx">
+    <!-- Header -->
+    <div class="wx-header">
+        <div class="wx-header-top">
+            <div class="wx-header-title">
+                <div class="wx-header-icon"><i class="bi bi-cloud-sun"></i></div>
+                <div>
+                    <h2>Weather Conditions</h2>
+                    <p>Live conditions for fleet operations across South Africa</p>
+                </div>
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-sm wx-btn-refresh" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+        </div>
+
+        <div class="wx-stats">
+            <div class="wx-stat" style="--wx-accent: var(--wx-primary);">
+                <div class="wx-stat-icon"><i class="bi bi-geo-alt"></i></div>
+                <div>
+                    <div class="wx-stat-value">{{ weather_data|length }}</div>
+                    <div class="wx-stat-label">Cities monitored</div>
+                </div>
+            </div>
+            <div class="wx-stat" style="--wx-accent: {% if has_rain_warnings %}var(--wx-warning){% else %}var(--wx-success){% endif %};">
+                <div class="wx-stat-icon"><i class="bi {% if has_rain_warnings %}bi-exclamation-triangle{% else %}bi-check-circle{% endif %}"></i></div>
+                <div>
+                    <div class="wx-stat-value">{{ rain_warnings|length }}</div>
+                    <div class="wx-stat-label">Active alert{{ rain_warnings|length|pluralize }}</div>
+                </div>
+            </div>
+            <div class="wx-stat" style="--wx-accent: var(--wx-danger);">
+                <div class="wx-stat-icon"><i class="bi bi-thermometer-half"></i></div>
+                <div>
+                    <div class="wx-stat-value" id="wxAvgTemp">--</div>
+                    <div class="wx-stat-label">Avg temperature</div>
+                </div>
+            </div>
+            <div class="wx-stat" style="--wx-accent: var(--wx-violet);">
+                <div class="wx-stat-icon"><i class="bi bi-clock-history"></i></div>
+                <div>
+                    <div class="wx-stat-value" id="wxCountdown">30:00</div>
+                    <div class="wx-stat-label">Next update</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rain Alerts -->
+    {% if has_rain_warnings %}
+    <div class="mb-4">
+        <h6 class="wx-section-title"><i class="bi bi-megaphone"></i>Active weather alerts</h6>
+        {% for warning in rain_warnings %}
+        <div class="wx-alert alert fade show {{ warning.severity }}" role="alert">
+            <div class="wx-alert-icon">
+                <i class="bi {% if warning.severity == 'high' %}bi-cloud-lightning-rain{% else %}bi-cloud-drizzle{% endif %}"></i>
+            </div>
+            <div class="wx-alert-body">
+                <div class="wx-alert-title">
+                    <strong>{{ warning.location }}</strong>
+                    <span class="wx-pill">
+                        {% if warning.severity == 'high' %}Heavy rain warning{% else %}Rain alert{% endif %}
+                    </span>
+                </div>
+                <div class="wx-alert-meta">
+                    <span><i class="bi bi-umbrella"></i>{{ warning.probability }}% chance in next 24h</span>
+                    {% if warning.expected_rainfall > 0 %}
+                    <span><i class="bi bi-droplet"></i>{{ warning.expected_rainfall|floatformat:1 }} mm expected</span>
+                    {% endif %}
+                </div>
+                <div class="wx-alert-advice">
+                    <span class="wx-chip"><i class="bi bi-speedometer2"></i>Reduce speed</span>
+                    <span class="wx-chip"><i class="bi bi-lightbulb"></i>Headlights on</span>
+                    <span class="wx-chip"><i class="bi bi-signpost-split"></i>Monitor alternate routes</span>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- City Cards -->
+    <h6 class="wx-section-title"><i class="bi bi-buildings"></i>Major cities</h6>
+    <div class="row g-3 mb-4 wx-cities">
+        {% for city_key, weather in weather_data.items %}
+        <div class="col-sm-6 col-xl-3">
+            <div class="wx-city {% if weather.rain > 0 or weather.today_precip_prob > 70 %}rainy{% elif weather.weather_code == 0 %}sunny{% else %}cloudy{% endif %}">
+                <div class="wx-city-body">
+                    {% if weather.error %}
+                        <h5 class="wx-city-name">{{ weather.location }}</h5>
+                        <div class="wx-city-error">
+                            <i class="bi bi-exclamation-circle"></i>
+                            {{ weather.error }}
+                        </div>
+                    {% else %}
+                        <div class="wx-city-head">
+                            <div>
+                                <h5 class="wx-city-name">{{ weather.location }}</h5>
+                                <p class="wx-city-desc">{{ weather.description }}</p>
+                            </div>
+                            <div class="wx-city-icon"><i class="{{ weather.icon }}"></i></div>
+                        </div>
+
+                        <div class="wx-temp">
+                            <span class="wx-temp-value">{{ weather.temperature|floatformat:1 }}°</span>
+                            {% if weather.today_max and weather.today_min %}
+                            <span class="wx-temp-range">
+                                <span class="hi"><i class="bi bi-arrow-up-short"></i>{{ weather.today_max|floatformat:0 }}°</span>
+                                <span class="lo"><i class="bi bi-arrow-down-short"></i>{{ weather.today_min|floatformat:0 }}°</span>
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="wx-feels">Feels like {{ weather.apparent_temperature|floatformat:1 }}°C</div>
+
+                        <div class="wx-metrics">
+                            <div class="wx-metric">
+                                <i class="bi bi-droplet-half"></i>
+                                <div class="wx-metric-value">{{ weather.humidity }}%</div>
+                                <div class="wx-metric-label">Humidity</div>
+                            </div>
+                            <div class="wx-metric">
+                                <i class="bi bi-wind"></i>
+                                <div class="wx-metric-value">{{ weather.wind_speed|floatformat:0 }}</div>
+                                <div class="wx-metric-label">km/h</div>
+                            </div>
+                            <div class="wx-metric">
+                                <i class="bi bi-clouds"></i>
+                                <div class="wx-metric-value">{{ weather.cloud_cover|default:"--" }}%</div>
+                                <div class="wx-metric-label">Cloud</div>
+                            </div>
+                        </div>
+
+                        <div class="wx-precip-row">
+                            <span>Rain probability</span>
+                            <strong>{{ weather.today_precip_prob|default:0 }}%</strong>
+                        </div>
+                        <div class="wx-progress" role="progressbar" aria-label="Rain probability" aria-valuenow="{{ weather.today_precip_prob|default:0 }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="wx-progress-bar {% if weather.today_precip_prob > 85 %}high{% elif weather.today_precip_prob > 70 %}med{% endif %}" style="width: {{ weather.today_precip_prob|default:0 }}%"></div>
+                        </div>
+
+                        {% if weather.rain > 0 %}
+                        <span class="wx-rain-now"><i class="bi bi-cloud-rain"></i>{{ weather.rain|floatformat:1 }} mm falling now</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% if not weather.error %}
+                <div class="wx-city-foot">
+                    <i class="bi bi-arrow-repeat me-1"></i>Updated {{ weather.last_updated|lower }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Temperature Chart -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="wx-panel">
+                <div class="wx-panel-head">
+                    <h5><i class="bi bi-bar-chart-line"></i>Current temperature by city</h5>
+                    <div class="wx-legend d-none d-md-flex">
+                        <span><i style="background:#0ea5e9"></i>&le; 15°</span>
+                        <span><i style="background:#10b981"></i>15–20°</span>
+                        <span><i style="background:#f59e0b"></i>20–25°</span>
+                        <span><i style="background:#ef4444"></i>&gt; 25°</span>
+                    </div>
+                </div>
+                <div class="wx-panel-body">
+                    <div class="wx-chart-wrap">
+                        <canvas id="temperatureChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fleet Ops + Safety -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="wx-panel">
+                <div class="wx-panel-head">
+                    <h5><i class="bi bi-truck"></i>Fleet operations status</h5>
+                </div>
+                <div class="wx-panel-body">
+                    {% if has_rain_warnings %}
+                    <div class="wx-status warn">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <div>
+                            <strong>Weather alert active</strong>
+                            <span>Rain detected on {{ rain_warnings|length }} route region{{ rain_warnings|length|pluralize }} — enhanced safety protocols recommended.</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="wx-status">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <div>
+                            <strong>Optimal conditions</strong>
+                            <span>Clear weather across all major routes — normal operations.</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <h6 class="wx-section-title"><i class="bi bi-thermometer-half"></i>Temperature overview</h6>
+                    <ul class="wx-city-list">
+                        {% for city_key, weather in weather_data.items %}
+                        {% if not weather.error %}
+                        <li>
+                            <span class="name"><i class="{{ weather.icon }}"></i>{{ weather.location }}</span>
+                            <span class="val">
+                                {% if weather.rain > 0 %}<i class="bi bi-cloud-rain" title="Raining"></i>{% endif %}
+                                {{ weather.temperature|floatformat:1 }}°C
+                            </span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="wx-panel">
+                <div class="wx-panel-head">
+                    <h5><i class="bi bi-shield-check"></i>Safety guidelines</h5>
+                </div>
+                <div class="wx-panel-body">
+                    <h6 class="wx-section-title"><i class="bi bi-clipboard-check"></i>Current recommendations</h6>
+                    {% if has_rain_warnings %}
+                    <ul class="wx-guides warn">
+                        <li><i class="bi bi-speedometer2"></i>Reduce speeds by 20–30%</li>
+                        <li><i class="bi bi-arrows-expand"></i>Increase following distance</li>
+                        <li><i class="bi bi-lightbulb"></i>Mandatory headlight usage</li>
+                        <li><i class="bi bi-signpost-split"></i>Monitor alternate routes</li>
+                        <li><i class="bi bi-telephone"></i>Enhanced driver communication</li>
+                    </ul>
+                    {% else %}
+                    <ul class="wx-guides ok">
+                        <li><i class="bi bi-check2"></i>Standard operating procedures</li>
+                        <li><i class="bi bi-truck"></i>Normal speed limits apply</li>
+                        <li><i class="bi bi-sign-turn-right"></i>All routes operational</li>
+                        <li><i class="bi bi-eye"></i>Optimal visibility conditions</li>
+                    </ul>
+                    {% endif %}
+
+                    <div class="wx-panel-foot">
+                        <i class="bi bi-clock"></i>Next data refresh in <strong id="countdown">30:00</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    // City temperatures for the chart and average (stringformat keeps a "." decimal regardless of locale)
+    var wxCities = [];
+    {% for city_key, weather in weather_data.items %}{% if not weather.error %}
+    wxCities.push({ name: "{{ weather.location|escapejs }}", temp: {{ weather.temperature|stringformat:".1f" }} });
+    {% endif %}{% endfor %}
+
+    function colorFor(t) {
+        if (t > 25) return '#ef4444';
+        if (t > 20) return '#f59e0b';
+        if (t > 15) return '#10b981';
+        return '#0ea5e9';
+    }
+
+    function renderAverage() {
+        var el = document.getElementById('wxAvgTemp');
+        if (!el || !wxCities.length) return;
+        var sum = wxCities.reduce(function (a, c) { return a + c.temp; }, 0);
+        el.textContent = (sum / wxCities.length).toFixed(1) + '°C';
+    }
+
+    function renderChart() {
+        var canvas = document.getElementById('temperatureChart');
+        if (!canvas || typeof Chart === 'undefined') return;
+
+        // Destroy any previous instance (the Analytics tab can re-inject this fragment)
+        var existing = Chart.getChart ? Chart.getChart(canvas) : null;
+        if (existing) existing.destroy();
+
+        var temps = wxCities.map(function (c) { return c.temp; });
+        var colors = temps.map(colorFor);
+
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: wxCities.map(function (c) { return c.name; }),
+                datasets: [{
+                    label: 'Temperature',
+                    data: temps,
+                    backgroundColor: colors,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    maxBarThickness: 64
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 10,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: { label: function (ctx) { return ctx.parsed.y.toFixed(1) + '°C'; } }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: Math.ceil((Math.max.apply(null, temps.concat([0])) + 5) / 5) * 5,
+                        border: { display: false },
+                        grid: { color: '#f1f5f9' },
+                        ticks: { color: '#64748b', callback: function (v) { return v + '°'; } }
+                    },
+                    x: {
+                        border: { display: false },
+                        grid: { display: false },
+                        ticks: { color: '#1e293b', font: { weight: '600' } }
+                    }
+                },
+                animation: { duration: 900, easing: 'easeOutQuart' }
+            }
+        });
+    }
+
+    function startCountdown(seconds) {
+        if (window.__wxCountdown) clearInterval(window.__wxCountdown);
+        var targets = ['countdown', 'wxCountdown'];
+        var remaining = seconds;
+        function paint(text) {
+            targets.forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = text;
+            });
+        }
+        window.__wxCountdown = setInterval(function () {
+            // Stop if the fragment was removed from the page (e.g. Analytics tab reloaded)
+            if (!document.getElementById('countdown')) { clearInterval(window.__wxCountdown); return; }
+            var m = Math.floor(remaining / 60), s = remaining % 60;
+            paint((m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s);
+            if (--remaining < 0) {
+                clearInterval(window.__wxCountdown);
+                paint('Refreshing…');
+                setTimeout(function () { location.reload(); }, 1000);
+            }
+        }, 1000);
+    }
+
+    function init() {
+        renderAverage();
+        renderChart();
+        startCountdown(30 * 60);
+    }
+
+    // On the full page this runs before base.html loads Chart.js, so wait for the DOM;
+    // when injected via AJAX the page is already loaded, so run immediately.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>

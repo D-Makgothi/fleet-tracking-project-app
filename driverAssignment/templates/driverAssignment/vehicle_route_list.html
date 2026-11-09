@@ -1,0 +1,126 @@
+{% extends 'main/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Vehicle-Route Assignments</h2>
+        <a href="{% url 'driverAssignment:assign_vehicle_route' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle me-2"></i>New Assignment
+        </a>
+    </div>
+    
+    {% if assignments %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Vehicle</th>
+                        <th>Route</th>
+                        <th>Assigned Driver</th>
+                        <th>Assigned Date</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in assignments %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'main:vehicle_detail' assignment.vehicle.id %}" class="text-decoration-none">
+                                    <i class="bi bi-truck me-2"></i>{{ assignment.vehicle.vehicle_registration_no }}
+                                </a>
+                                <br>
+                                <small class="text-muted">{{ assignment.vehicle.vehicle_make }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ assignment.route.route_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ assignment.route.start }} → {{ assignment.route.finish }}</small>
+                                <br>
+                                <small class="text-muted">Rate: R{{ assignment.route.transport_rate }}/ton</small>
+                            </td>
+                            <td>
+                                {% if assignment.assigned_driver %}
+                                    <a href="{% url 'driverAssignment:driver_detail' assignment.assigned_driver.id %}" class="text-decoration-none">
+                                        <i class="bi bi-person me-2"></i>{{ assignment.assigned_driver.user.username }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">No driver assigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ assignment.assigned_date|date:"M d, Y H:i" }}
+                                <br>
+                                <small class="text-muted">{{ assignment.assigned_date|timesince }} ago</small>
+                            </td>
+                            <td>
+                                {% if assignment.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                                {% if assignment.route.is_active %}
+                                    <br><span class="badge bg-info">Route Active</span>
+                                {% else %}
+                                    <br><span class="badge bg-warning text-dark">Route Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if assignment.notes %}
+                                    {{ assignment.notes|truncatewords:10 }}
+                                {% else %}
+                                    <span class="text-muted">No notes</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    {% if assignment.is_active %}
+                                        <a href="{% url 'driverAssignment:remove_vehicle_route' assignment.id %}" 
+                                           class="btn btn-sm btn-outline-danger" title="Remove Assignment">
+                                            <i class="bi bi-x-circle"></i>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'main:vehicle_detail' assignment.vehicle.id %}" 
+                                       class="btn btn-sm btn-outline-primary" title="View Vehicle">
+                                        <i class="bi bi-truck"></i>
+                                    </a>
+                                    {% if assignment.assigned_driver %}
+                                        <a href="{% url 'driverAssignment:driver_detail' assignment.assigned_driver.id %}" 
+                                           class="btn btn-sm btn-outline-info" title="View Driver">
+                                            <i class="bi bi-person"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            No vehicle-route assignments found. <a href="{% url 'driverAssignment:assign_vehicle_route' %}">Create the first assignment</a>.
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .table th {
+        background-color: #343a40;
+        color: white;
+        border-color: #454d55;
+    }
+    
+    .btn-group .btn {
+        margin-right: 2px;
+    }
+    
+    .badge {
+        font-size: 0.8em;
+    }
+</style>
+{% endblock %}

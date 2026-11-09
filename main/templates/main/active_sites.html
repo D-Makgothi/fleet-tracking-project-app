@@ -1,0 +1,43 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Client Database{% endblock %}
+
+{% block content %}
+{% comment %} This this is the basic strtcure of a table that 
+can be used to retrieve data from registered users and then display 
+the registered users live {% endcomment %}
+
+<table class="table">
+    <thead class ="thead-dark">
+        <tr>
+        <th>Site Reference</th>
+        <th>Responsible User</th>
+        <th>Site co-ordinator Email</th>
+        <th>Status</th>
+        <th>Category</th>
+        <th>Edit Site</th>
+        <th>Delete Site</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for site_var in all_sites %}
+    <tr>
+        <td>{{ site_var.site_reference }}</td>
+        <td>{{ site_var.responsible_user}}</td>
+        <td>{{ site_var.site_coordinator_email}}</td>
+        <td>{{ site_var.status}}</td>
+        <td>{{ site_var.site_category}}</td>
+        <td>
+            <a href="{% url 'register_login:edit_site' site_var.id %}">Edit</a> <!-- Linking Edit function to the specific site of interest -->
+        </td>
+        <td>
+            <a href="{% url 'register_login:delete_site' site_var.id %}">Delete</a> <!-- Cross Referencing from a different app all together to delete a client from the db -->
+        </td>
+
+    </tr>
+    {% endfor %}
+</tbody>
+
+</table>
+{% endblock %}

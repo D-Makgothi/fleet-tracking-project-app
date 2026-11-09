@@ -1,0 +1,408 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}{{ agent.full_name }} - Agent Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1">
+                            <li class="breadcrumb-item"><a href="{% url 'crm:dashboard' %}" class="text-decoration-none">CRM</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'crm:agents' %}" class="text-decoration-none">Agents</a></li>
+                            <li class="breadcrumb-item active">{{ agent.full_name }}</li>
+                        </ol>
+                    </nav>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-person-badge text-primary me-2"></i>
+                        {{ agent.full_name }}
+                        <span class="badge bg-{{ agent.agent_type|yesno:'success,info' }} ms-2">
+                            {% if agent.agent_type %}AI Agent{% else %}Real Agent{% endif %}
+                        </span>
+                    </h2>
+                    <p class="text-muted mb-0">Comprehensive agent profile and performance overview</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'crm:agent_edit' agent.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i>Edit Agent
+                    </a>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'crm:agent_performance_detail' agent.id %}">
+                                <i class="bi bi-graph-up me-2"></i>Performance Report
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'crm:agent_delete' agent.id %}">
+                                <i class="bi bi-trash me-2"></i>Delete Agent
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Profile Section -->
+    <div class="row mb-4">
+        <!-- Basic Information Card -->
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Agent Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Full Name</label>
+                                <p class="fw-semibold mb-0">{{ agent.full_name }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Email Address</label>
+                                <p class="mb-0">
+                                    <a href="mailto:{{ agent.email }}" class="text-decoration-none">
+                                        <i class="bi bi-envelope me-1"></i>{{ agent.email }}
+                                    </a>
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Phone Number</label>
+                                <p class="mb-0">
+                                    {% if agent.phone %}
+                                        <a href="tel:{{ agent.phone }}" class="text-decoration-none">
+                                            <i class="bi bi-telephone me-1"></i>{{ agent.phone }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">Not provided</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Agent Type</label>
+                                <p class="mb-0">
+                                    <span class="badge bg-{{ agent.agent_type|yesno:'success,info' }} fs-6">
+                                        {% if agent.agent_type %}
+                                            <i class="bi bi-robot me-1"></i>AI Agent
+                                        {% else %}
+                                            <i class="bi bi-person me-1"></i>Real Agent
+                                        {% endif %}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Status</label>
+                                <p class="mb-0">
+                                    <span class="badge bg-{{ agent.is_active|yesno:'success,secondary' }} fs-6">
+                                        <i class="bi bi-{{ agent.is_active|yesno:'check-circle,pause-circle' }} me-1"></i>
+                                        {{ agent.is_active|yesno:"Active,Inactive" }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Date Joined</label>
+                                <p class="mb-0">
+                                    <i class="bi bi-calendar me-1"></i>{{ agent.created_at|date:"M d, Y" }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% if agent.bio %}
+                    <div class="mt-3 pt-3 border-top">
+                        <label class="form-label text-muted small">Biography</label>
+                        <p class="mb-0">{{ agent.bio|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Statistics Card -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-gradient-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Performance Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="p-3 bg-primary bg-opacity-10 rounded">
+                                    <div class="h4 mb-1 text-primary">{{ total_clients }}</div>
+                                    <small class="text-muted">Total Clients</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-success bg-opacity-10 rounded">
+                                    <div class="h4 mb-1 text-success">{{ active_clients }}</div>
+                                    <small class="text-muted">Active Clients</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Total Potential Value</label>
+                        <h4 class="text-success mb-0">
+                            <i class="bi bi-currency-dollar"></i>{{ total_potential_value|floatformat:2|default:"0.00" }}
+                        </h4>
+                    </div>
+                    <div class="d-grid">
+                        <a href="{% url 'crm:agent_performance_detail' agent.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-graph-up me-1"></i>View Full Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clients Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-people me-2"></i>Assigned Clients ({{ clients.count }})
+                    </h5>
+                    <a href="{% url 'crm:client_add' %}?agent={{ agent.id }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-person-plus me-1"></i>Assign New Client
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if clients %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>Company</th>
+                                        <th>Status</th>
+                                        <th>Potential Value</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for client in clients %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                    <i class="bi bi-person text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold">{{ client.full_name }}</div>
+                                                    <small class="text-muted">{{ client.email }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ client.company|default:"—" }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ client.status|slice:':1'|yesno:'warning,success,danger' }}">
+                                                {{ client.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="text-success fw-semibold">
+                                                ${{ client.potential_value|floatformat:2|default:"0.00" }}
+                                            </span>
+                                        </td>
+                                        <td>{{ client.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'crm:client_detail' client.id %}" class="btn btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'crm:client_edit' client.id %}" class="btn btn-outline-secondary">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="text-muted mt-2">No Clients Assigned</h5>
+                            <p class="text-muted mb-3">This agent doesn't have any clients assigned yet.</p>
+                            <a href="{% url 'crm:client_add' %}?agent={{ agent.id }}" class="btn btn-primary">
+                                <i class="bi bi-person-plus me-1"></i>Assign First Client
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="row">
+        <!-- Recent Interactions -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-chat-dots me-2"></i>Recent Interactions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_interactions %}
+                        <div class="timeline">
+                            {% for interaction in recent_interactions %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-primary"></div>
+                                <div class="timeline-content">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ interaction.get_interaction_type_display }}</h6>
+                                            <p class="text-muted mb-1">
+                                                <small>
+                                                    with <strong>{{ interaction.client.full_name }}</strong>
+                                                    • {{ interaction.interaction_date|date:"M d, Y g:i A" }}
+                                                </small>
+                                            </p>
+                                            {% if interaction.notes %}
+                                            <p class="mb-0">{{ interaction.notes|truncatewords:20 }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <span class="badge bg-{{ interaction.get_interaction_type_display|slice:':1'|yesno:'primary,success,warning' }}">
+                                            {{ interaction.get_interaction_type_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-chat-dots text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="text-muted mt-2">No Recent Interactions</h5>
+                            <p class="text-muted">No client interactions recorded yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Hunting Logs (if AI agent) -->
+        <div class="col-md-4">
+            {% if agent.agent_type and hunting_logs %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-robot me-2"></i>AI Hunting Logs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for log in hunting_logs %}
+                    <div class="border-bottom pb-2 mb-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <small class="text-muted">{{ log.created_at|date:"M d, g:i A" }}</small>
+                                <p class="mb-1 small">{{ log.action_taken|truncatewords:15 }}</p>
+                            </div>
+                            <span class="badge bg-{{ log.success|yesno:'success,danger' }} ms-2">
+                                {{ log.success|yesno:"Success,Failed" }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'crm:hunting_logs' %}?agent={{ agent.id }}" class="btn btn-sm btn-outline-primary">
+                            View All Logs
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-shield-check me-2"></i>Agent Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'crm:client_add' %}?agent={{ agent.id }}" class="btn btn-outline-primary">
+                            <i class="bi bi-person-plus me-1"></i>Assign New Client
+                        </a>
+                        <a href="{% url 'crm:agent_performance_detail' agent.id %}" class="btn btn-outline-success">
+                            <i class="bi bi-graph-up me-1"></i>View Performance
+                        </a>
+                        <a href="{% url 'crm:agent_edit' agent.id %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-pencil me-1"></i>Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 1rem;
+    width: 2px;
+    height: calc(100% - 1rem);
+    background: #dee2e6;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -1.75rem;
+    top: 0.25rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 3px solid var(--bs-primary);
+}
+
+.avatar-sm {
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+</style>
+{% endblock %}

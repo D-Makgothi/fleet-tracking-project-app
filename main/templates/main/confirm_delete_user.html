@@ -1,0 +1,43 @@
+{% extends 'main/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3>{{ title }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <strong>Warning!</strong> This action cannot be undone.
+                    </div>
+                    
+                    <p>Are you sure you want to delete the following user?</p>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ user.user.username }}</h5>
+                            <p class="card-text">
+                                <strong>Name:</strong> {{ user.user.first_name }} {{ user.user.last_name }}<br>
+                                <strong>Email:</strong> {{ user.user.email }}<br>
+                                <strong>Mine:</strong> {{ user.mine }}<br>
+                                <strong>Driver License:</strong> {{ user.driver_license_no }}<br>
+                                <strong>Vehicle Registration:</strong> {{ user.vehicle_registration_no }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Yes, Delete User</button>
+                    </form>
+                    <a href="{% url 'main:active_users' %}" class="btn btn-secondary ml-2">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Client Database{% endblock %}
+
+{% block content %}
+{% comment %} This this is the basic strtcure of a table that 
+can be used to retrieve data from registered users and then display 
+the registered users live {% endcomment %}
+
+<table class="table">
+    <thead class ="thead-dark">
+        <tr>
+        <th>Site Manager</th>
+        <th>Site Name</th>
+        <th>Date Created</th>
+        <th>Edit Client Details</th>
+        <th>Delete Client</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for client_var in all_clients %}
+    <tr>
+        <td>{{ client_var.manager }}</td>
+        <td>{{ client_var.site }}</td>
+        <td>{{ client_var.date_created }}</td>a
+        <td>
+            <a href="{% url 'register_login:edit_client' client_var.id %}">Edit</a> <!-- Cross Referencing from a different app all together to edit client details -->
+        </td>
+        <td>
+            <a href="{% url 'register_login:delete_client' client_var.id %}">Dlete</a> <!-- Cross Referencing from a different app all together to delete a client from the db -->
+        </td>
+
+    </tr>
+    {% endfor %}
+</tbody>
+
+</table>
+{% endblock %}

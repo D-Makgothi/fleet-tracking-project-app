@@ -1,0 +1,466 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}{{ client.client_name }} - Client Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1">
+                            <li class="breadcrumb-item"><a href="{% url 'crm:dashboard' %}" class="text-decoration-none">CRM</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'crm:clients' %}" class="text-decoration-none">Clients</a></li>
+                            <li class="breadcrumb-item active">{{ client.client_name }}</li>
+                        </ol>
+                    </nav>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-building text-primary me-2"></i>
+                        {{ client.client_name }}
+                        <span class="badge bg-{% if client.status == 'active' %}success{% elif client.status == 'prospect' %}warning{% elif client.status == 'negotiating' %}info{% elif client.status == 'lost' %}danger{% else %}secondary{% endif %} ms-2">
+                            {{ client.get_status_display }}
+                        </span>
+                    </h2>
+                    <p class="text-muted mb-0">
+                        {% if client.company_name %}{{ client.company_name }} • {% endif %}
+                        {{ client.get_priority_display }} Priority Client
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'crm:client_edit' client.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i>Edit Client
+                    </a>
+                    <a href="{% url 'crm:interaction_add' %}?client={{ client.id }}" class="btn btn-primary">
+                        <i class="bi bi-chat-plus me-1"></i>Log Interaction
+                    </a>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="mailto:{{ client.email }}">
+                                <i class="bi bi-envelope me-2"></i>Send Email
+                            </a></li>
+                            {% if client.client_contact %}
+                            <li><a class="dropdown-item" href="tel:{{ client.client_contact }}">
+                                <i class="bi bi-telephone me-2"></i>Call Client
+                            </a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'crm:client_delete' client.id %}">
+                                <i class="bi bi-trash me-2"></i>Delete Client
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Overview Cards -->
+    <div class="row mb-4">
+        <!-- Main Information Card -->
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Client Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Client Name</label>
+                                <p class="fw-semibold mb-0">{{ client.client_name }}</p>
+                            </div>
+                            {% if client.company_name %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Company</label>
+                                <p class="mb-0">{{ client.company_name }}</p>
+                            </div>
+                            {% endif %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Primary Contact</label>
+                                <p class="mb-0">
+                                    <a href="tel:{{ client.client_contact }}" class="text-decoration-none">
+                                        <i class="bi bi-telephone me-1"></i>{{ client.client_contact }}
+                                    </a>
+                                </p>
+                            </div>
+                            {% if client.email %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Email</label>
+                                <p class="mb-0">
+                                    <a href="mailto:{{ client.email }}" class="text-decoration-none">
+                                        <i class="bi bi-envelope me-1"></i>{{ client.email }}
+                                    </a>
+                                </p>
+                            </div>
+                            {% endif %}
+                            {% if client.phone_secondary %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Secondary Phone</label>
+                                <p class="mb-0">
+                                    <a href="tel:{{ client.phone_secondary }}" class="text-decoration-none">
+                                        <i class="bi bi-phone me-1"></i>{{ client.phone_secondary }}
+                                    </a>
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Status</label>
+                                <p class="mb-0">
+                                    <span class="badge bg-{% if client.status == 'active' %}success{% elif client.status == 'prospect' %}warning{% elif client.status == 'negotiating' %}info{% elif client.status == 'lost' %}danger{% else %}secondary{% endif %} fs-6">
+                                        {{ client.get_status_display }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Priority Level</label>
+                                <p class="mb-0">
+                                    <span class="badge bg-{% if client.priority == 'urgent' %}danger{% elif client.priority == 'high' %}warning{% elif client.priority == 'medium' %}info{% else %}secondary{% endif %} fs-6">
+                                        <i class="bi bi-{% if client.priority == 'urgent' %}exclamation-triangle{% elif client.priority == 'high' %}arrow-up{% elif client.priority == 'medium' %}dash{% else %}arrow-down{% endif %} me-1"></i>
+                                        {{ client.get_priority_display }}
+                                    </span>
+                                </p>
+                            </div>
+                            {% if client.agent %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Assigned Agent</label>
+                                <p class="mb-0">
+                                    <a href="{% url 'crm:agent_detail' client.agent.id %}" class="text-decoration-none">
+                                        <i class="bi bi-person-badge me-1"></i>{{ client.agent.full_name }}
+                                    </a>
+                                </p>
+                            </div>
+                            {% endif %}
+                            {% if client.industry %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Industry</label>
+                                <p class="mb-0">{{ client.industry }}</p>
+                            </div>
+                            {% endif %}
+                            {% if client.company_size %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Company Size</label>
+                                <p class="mb-0">{{ client.get_company_size_display }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if client.full_address %}
+                    <div class="mt-3 pt-3 border-top">
+                        <label class="form-label text-muted small">Address</label>
+                        <p class="mb-0">
+                            <i class="bi bi-geo-alt me-1"></i>{{ client.full_address }}
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    {% if client.website %}
+                    <div class="mt-2">
+                        <label class="form-label text-muted small">Website</label>
+                        <p class="mb-0">
+                            <a href="{{ client.website }}" target="_blank" class="text-decoration-none">
+                                <i class="bi bi-globe me-1"></i>{{ client.website }}
+                            </a>
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    {% if client.notes %}
+                    <div class="mt-3 pt-3 border-top">
+                        <label class="form-label text-muted small">Notes</label>
+                        <p class="mb-0">{{ client.notes|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Business & Financial Info -->
+        <div class="col-lg-4">
+            <div class="row g-3">
+                <!-- Financial Overview -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-gradient-success text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-currency-dollar me-2"></i>Financial Overview
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if client.potential_value %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Potential Value</label>
+                                <h4 class="text-success mb-0">
+                                    ${{ client.potential_value|floatformat:2 }}
+                                </h4>
+                            </div>
+                            {% endif %}
+                            {% if client.annual_revenue %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Annual Revenue</label>
+                                <p class="fw-semibold mb-0 text-primary">
+                                    ${{ client.annual_revenue|floatformat:2 }}
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fleet Requirements -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-gradient-info text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-truck me-2"></i>Fleet Requirements
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Requires Fleet Services</label>
+                                <p class="mb-0">
+                                    <span class="badge bg-{{ client.requires_fleet_services|yesno:'success,secondary' }}">
+                                        <i class="bi bi-{{ client.requires_fleet_services|yesno:'check-circle,x-circle' }} me-1"></i>
+                                        {{ client.requires_fleet_services|yesno:"Yes,No" }}
+                                    </span>
+                                </p>
+                            </div>
+                            {% if client.estimated_vehicles_needed %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Estimated Vehicles Needed</label>
+                                <p class="mb-0 fw-semibold">{{ client.estimated_vehicles_needed }} vehicles</p>
+                            </div>
+                            {% endif %}
+                            {% if client.preferred_routes %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Preferred Routes</label>
+                                <p class="mb-0 small">{{ client.preferred_routes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Dates -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-gradient-warning text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-calendar-event me-2"></i>Important Dates
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label class="form-label text-muted small">Client Since</label>
+                                <p class="mb-0">{{ client.created_at|date:"M d, Y" }}</p>
+                            </div>
+                            {% if client.date_acquired %}
+                            <div class="mb-2">
+                                <label class="form-label text-muted small">Date Acquired</label>
+                                <p class="mb-0">{{ client.date_acquired|date:"M d, Y" }}</p>
+                            </div>
+                            {% endif %}
+                            {% if client.last_contact_date %}
+                            <div class="mb-2">
+                                <label class="form-label text-muted small">Last Contact</label>
+                                <p class="mb-0">{{ client.last_contact_date|date:"M d, Y" }}</p>
+                            </div>
+                            {% endif %}
+                            {% if client.next_follow_up %}
+                            <div class="mb-2">
+                                <label class="form-label text-muted small">Next Follow-up</label>
+                                <p class="mb-0 {% if client.next_follow_up|date:'Y-m-d' <= today|date:'Y-m-d' %}text-danger fw-semibold{% endif %}">
+                                    {{ client.next_follow_up|date:"M d, Y" }}
+                                    {% if client.next_follow_up|date:'Y-m-d' <= today|date:'Y-m-d' %}
+                                        <i class="bi bi-exclamation-triangle text-danger ms-1"></i>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sites & Interactions Section -->
+    <div class="row">
+        <!-- Client Sites -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-geo-alt me-2"></i>Client Sites ({{ sites.count }})
+                    </h5>
+                    <button class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus me-1"></i>Add Site
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if sites %}
+                        {% for site in sites %}
+                        <div class="border-bottom pb-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ site.site_name }}</h6>
+                                    {% if site.full_address %}
+                                    <p class="text-muted mb-1 small">
+                                        <i class="bi bi-geo-alt me-1"></i>{{ site.full_address }}
+                                    </p>
+                                    {% endif %}
+                                    {% if site.site_description %}
+                                    <p class="mb-0 small">{{ site.site_description|truncatewords:15 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" data-bs-toggle="tooltip" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-geo-alt text-muted" style="font-size: 3rem;"></i>
+                            <h6 class="text-muted mt-2">No Sites Registered</h6>
+                            <p class="text-muted mb-3 small">No sites have been added for this client yet.</p>
+                            <button class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus me-1"></i>Add First Site
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Interaction History -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-chat-dots me-2"></i>Recent Interactions ({{ total_interactions }})
+                    </h5>
+                    <a href="{% url 'crm:interaction_add' %}?client={{ client.id }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-chat-plus me-1"></i>Log Interaction
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if interactions %}
+                        <div class="timeline">
+                            {% for interaction in interactions|slice:":5" %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-{% if interaction.interaction_type == 'call' %}primary{% elif interaction.interaction_type == 'email' %}info{% elif interaction.interaction_type == 'meeting' %}success{% else %}secondary{% endif %}"></div>
+                                <div class="timeline-content">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <i class="bi bi-{% if interaction.interaction_type == 'call' %}telephone{% elif interaction.interaction_type == 'email' %}envelope{% elif interaction.interaction_type == 'meeting' %}people{% else %}chat{% endif %} me-1"></i>
+                                                {{ interaction.get_interaction_type_display }}
+                                            </h6>
+                                            <p class="text-muted mb-1 small">
+                                                by {{ interaction.agent.full_name }} • {{ interaction.interaction_date|date:"M d, Y g:i A" }}
+                                            </p>
+                                            {% if interaction.notes %}
+                                            <p class="mb-0 small">{{ interaction.notes|truncatewords:20 }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <span class="badge bg-{% if interaction.interaction_type == 'call' %}primary{% elif interaction.interaction_type == 'email' %}info{% elif interaction.interaction_type == 'meeting' %}success{% else %}secondary{% endif %}">
+                                            {{ interaction.get_interaction_type_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if interactions.count > 5 %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'crm:interactions' %}?client={{ client.id }}" class="btn btn-sm btn-outline-primary">
+                                View All Interactions
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-chat-dots text-muted" style="font-size: 3rem;"></i>
+                            <h6 class="text-muted mt-2">No Interactions Yet</h6>
+                            <p class="text-muted mb-3 small">No interactions have been logged for this client.</p>
+                            <a href="{% url 'crm:interaction_add' %}?client={{ client.id }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-chat-plus me-1"></i>Log First Interaction
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 1rem;
+    width: 2px;
+    height: calc(100% - 1rem);
+    background: #dee2e6;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -1.75rem;
+    top: 0.25rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 3px solid var(--bs-primary);
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+</style>
+{% endblock %}

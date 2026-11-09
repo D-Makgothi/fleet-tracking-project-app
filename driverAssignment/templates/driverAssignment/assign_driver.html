@@ -1,0 +1,95 @@
+{% extends 'driverAssignment/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'driverAssignment:integrated_routes' %}" class="btn btn-secondary">Back to Routes</a>
+    </div>
+    
+    {% if route %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Route Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Route Name:</strong> {{ route.route_name }}</p>
+                    <p><strong>Start:</strong> {{ route.start }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Finish:</strong> {{ route.finish }}</p>
+                    <p><strong>Transport Rate:</strong> R{{ route.transport_rate|floatformat:2 }} per ton</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Driver Assignment</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.route.id_for_label }}" class="form-label">{{ form.route.label }}</label>
+                    {{ form.route }}
+                    {% if form.route.help_text %}
+                        <div class="form-text">{{ form.route.help_text }}</div>
+                    {% endif %}
+                    {% if form.route.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.route.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.driver.id_for_label }}" class="form-label">{{ form.driver.label }}</label>
+                    {{ form.driver }}
+                    {% if form.driver.help_text %}
+                        <div class="form-text">{{ form.driver.help_text }}</div>
+                    {% endif %}
+                    {% if form.driver.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.driver.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.notes.id_for_label }}" class="form-label">{{ form.notes.label }}</label>
+                    {{ form.notes }}
+                    {% if form.notes.help_text %}
+                        <div class="form-text">{{ form.notes.help_text }}</div>
+                    {% endif %}
+                    {% if form.notes.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.notes.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Assign Driver
+                    </button>
+                    <a href="{% url 'driverAssignment:integrated_routes' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

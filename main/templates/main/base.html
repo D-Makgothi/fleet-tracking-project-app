@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="https://bootswatch.com/5/cerulean/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        /* Sidebar Styles - Clean White Corporate Look */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 1000;
+            width: 280px;
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            overflow-x: hidden;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e2e8f0;
+        }
+        
+        .sidebar-user {
+            margin-top: auto !important;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin: 0 16px 16px 16px !important;
+            border: 1px solid #e2e8f0;
+        }
+
+        .sidebar.collapsed .sidebar-user {
+            display: none;
+        }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+        
+        .sidebar.collapsed .nav-link span {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .sidebar.collapsed .sidebar-brand {
+            opacity: 0;
+            padding-left: 20px;
+        }
+        
+        .sidebar.collapsed .dropdown-menu {
+            position: absolute;
+            left: 70px;
+            top: 0;
+            min-width: 200px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        /* Sidebar Toggle Button - Modern SaaS Style */
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .sidebar-toggle:hover {
+            background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+        }
+        
+        .sidebar-toggle.collapsed {
+            left: 15px;
+        }
+        
+        .toggle-icon {
+            transition: transform 0.3s ease;
+            font-size: 1.2rem;
+        }
+        
+        .sidebar-toggle.collapsed .toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        /* Sidebar Brand - Clean Header Style */
+        .sidebar-brand {
+            padding: 24px 20px 24px 80px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            margin: 0;
+            position: relative;
+        }
+
+        .sidebar-brand h5 {
+            color: #ffffff;
+            margin: 0;
+            font-weight: 700;
+            white-space: nowrap;
+            font-size: 1.25rem;
+            letter-spacing: -0.025em;
+        }
+        
+        /* Navigation Links - Modern Clean Style */
+        .sidebar .nav-link {
+            color: #64748b;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 2px 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover {
+            color: #2563eb;
+            background: #f1f5f9;
+            transform: translateX(2px);
+        }
+
+        .sidebar .nav-link.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        }
+        
+        .sidebar .nav-link i {
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+            margin-right: 12px;
+            transition: all 0.3s ease;
+            opacity: 0.8;
+        }
+
+        .sidebar .nav-link:hover i,
+        .sidebar .nav-link.active i {
+            opacity: 1;
+        }
+
+        .sidebar .nav-link span {
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-grow: 1;
+            font-size: 0.875rem;
+        }
+        
+        /* Dropdown Styles - Modern Clean Design */
+        .sidebar .dropdown-menu {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-top: 4px;
+            margin-left: 16px;
+            margin-right: 16px;
+            transition: all 0.3s ease;
+            padding: 8px 0;
+        }
+
+        .sidebar .dropdown-item {
+            color: #64748b;
+            padding: 8px 20px;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 6px;
+            margin: 2px 8px;
+        }
+
+        .sidebar .dropdown-item:hover {
+            color: #2563eb;
+            background: #f1f5f9;
+            transform: translateX(2px);
+        }
+
+        .sidebar .dropdown-item:focus {
+            color: #2563eb;
+            background: #f1f5f9;
+        }
+        
+        /* Main Content - Clean SaaS Layout */
+        .main-content {
+            margin-left: 280px;
+            padding: 32px 32px 32px 32px;
+            flex-grow: 1;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+
+        .main-content.collapsed {
+            margin-left: 70px;
+        }
+
+        /* Card Styling with SaaS Design */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            background: #ffffff;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 20px 24px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        .card-title {
+            color: #1e293b;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .card-text {
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        /* Header Styling - Ensure all headers are readable */
+        h1, h2, h3, h4, h5, h6,
+        .h1, .h2, .h3, .h4, .h5, .h6 {
+            color: #1e293b !important;
+            font-weight: 600;
+        }
+
+        /* Page titles and main headers */
+        .page-title {
+            color: #1e293b !important;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Headers on colored backgrounds - keep them white */
+        .bg-primary h1, .bg-primary h2, .bg-primary h3, .bg-primary h4, .bg-primary h5, .bg-primary h6,
+        .bg-success h1, .bg-success h2, .bg-success h3, .bg-success h4, .bg-success h5, .bg-success h6,
+        .bg-warning h1, .bg-warning h2, .bg-warning h3, .bg-warning h4, .bg-warning h5, .bg-warning h6,
+        .bg-danger h1, .bg-danger h2, .bg-danger h3, .bg-danger h4, .bg-danger h5, .bg-danger h6,
+        .bg-info h1, .bg-info h2, .bg-info h3, .bg-info h4, .bg-info h5, .bg-info h6,
+        .bg-dark h1, .bg-dark h2, .bg-dark h3, .bg-dark h4, .bg-dark h5, .bg-dark h6 {
+            color: #ffffff !important;
+        }
+
+        /* Headers with gradient backgrounds - keep them white */
+        .dashboard-hero h1, .dashboard-hero h2, .dashboard-hero h3, .dashboard-hero h4, .dashboard-hero h5, .dashboard-hero h6,
+        .hero-content h1, .hero-content h2, .hero-content h3, .hero-content h4, .hero-content h5, .hero-content h6,
+        [style*="linear-gradient"] h1, [style*="linear-gradient"] h2, [style*="linear-gradient"] h3,
+        [style*="linear-gradient"] h4, [style*="linear-gradient"] h5, [style*="linear-gradient"] h6 {
+            color: #ffffff !important;
+        }
+
+        /* Card headers - dark text on light background */
+        .card-header h1, .card-header h2, .card-header h3, .card-header h4, .card-header h5, .card-header h6 {
+            color: #1e293b !important;
+            margin: 0;
+        }
+
+        /* Text utilities override */
+        .text-dark {
+            color: #1e293b !important;
+        }
+
+        .text-light {
+            color: #f8fafc !important;
+        }
+
+        /* Navigation headers */
+        .nav-link h1, .nav-link h2, .nav-link h3, .nav-link h4, .nav-link h5, .nav-link h6 {
+            color: inherit !important;
+        }
+
+        /* Table headers */
+        th, .table th {
+            color: #1e293b !important;
+            font-weight: 600;
+        }
+
+        /* Form labels */
+        label, .form-label {
+            color: #374151 !important;
+            font-weight: 600;
+        }
+
+        /* Modal headers */
+        .modal-header h1, .modal-header h2, .modal-header h3, .modal-header h4, .modal-header h5, .modal-header h6,
+        .modal-title {
+            color: #1e293b !important;
+        }
+
+        /* Alert headers */
+        .alert h1, .alert h2, .alert h3, .alert h4, .alert h5, .alert h6 {
+            color: inherit !important;
+        }
+
+        /* Tab content headers */
+        .tab-content h1, .tab-content h2, .tab-content h3, .tab-content h4, .tab-content h5, .tab-content h6 {
+            color: #1e293b !important;
+        }
+
+        /* Dashboard specific overrides */
+        .container h1, .container h2, .container h3, .container h4, .container h5, .container h6,
+        .container-fluid h1, .container-fluid h2, .container-fluid h3, .container-fluid h4, .container-fluid h5, .container-fluid h6 {
+            color: #1e293b !important;
+        }
+
+        /* Override any conflicting Bootstrap theme styles */
+        body h1, body h2, body h3, body h4, body h5, body h6 {
+            color: #1e293b !important;
+        }
+
+        /* Special cases for headers with icons */
+        .d-flex h1, .d-flex h2, .d-flex h3, .d-flex h4, .d-flex h5, .d-flex h6 {
+            color: #1e293b !important;
+        }
+
+        /* Revenue and cost report headers */
+        .revenue-header h1, .revenue-header h2, .revenue-header h3, .revenue-header h4, .revenue-header h5, .revenue-header h6,
+        .cost-header h1, .cost-header h2, .cost-header h3, .cost-header h4, .cost-header h5, .cost-header h6 {
+            color: #1e293b !important;
+        }
+
+        /* Weather dashboard headers */
+        .weather-header h1, .weather-header h2, .weather-header h3, .weather-header h4, .weather-header h5, .weather-header h6 {
+            color: #1e293b !important;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .main-content.collapsed {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle {
+                left: 15px;
+            }
+
+            .sidebar-toggle.collapsed {
+                left: 15px;
+            }
+
+            .sidebar-brand {
+                padding: 24px 20px 24px 80px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 80px 10px 20px 10px;
+            }
+        }
+        
+        /* Modern Button Styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35);
+        }
+
+        /* Accent Colors for Special Cards */
+        .card.accent-purple {
+            border-left: 4px solid #8b5cf6;
+        }
+
+        .card.accent-teal {
+            border-left: 4px solid #10b981;
+        }
+
+        .card.accent-red {
+            border-left: 4px solid #ef4444;
+        }
+
+        /* Scrollbar Styling - Clean Modern Look */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Animation for content */
+        .main-content > * {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Makgothi Jnr Assistant Styles */
+        .makgothi-assistant {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .makgothi-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+            border: 3px solid #ffffff;
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .makgothi-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.4);
+        }
+
+        .makgothi-avatar::before {
+            content: '🧑🏾‍🦱';
+            font-size: 22px;
+            filter: brightness(1.1) saturate(1.2);
+        }
+
+        .makgothi-status-indicator {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 16px;
+            height: 16px;
+            background: #28a745;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            animation: pulse 2s infinite;
+        }
+
+        .makgothi-status-indicator.inactive {
+            background: #6c757d;
+            animation: none;
+        }
+
+        .makgothi-chat-bubble {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 320px;
+            max-height: 400px;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: none;
+            border: 1px solid #e9ecef;
+        }
+
+        .makgothi-chat-bubble.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
+        }
+
+        .makgothi-chat-header {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .makgothi-chat-header h6 {
+            margin: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .makgothi-chat-header h6::before {
+            content: '🧸';
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .makgothi-close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .makgothi-close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .makgothi-chat-body {
+            padding: 20px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .makgothi-message {
+            background: #f8fafc;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+            border-left: 4px solid #2563eb;
+            color: #1e293b;
+        }
+
+        .makgothi-help-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .makgothi-help-btn {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .makgothi-help-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .makgothi-toggle-controls {
+            position: absolute;
+            bottom: 100px;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .makgothi-assistant:hover .makgothi-toggle-controls {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: all;
+        }
+
+        .makgothi-toggle-btn {
+            background: #ffffff;
+            border: 2px solid #2563eb;
+            color: #2563eb;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .makgothi-toggle-btn:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+        .makgothi-toggle-btn.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .makgothi-assistant {
+                bottom: 15px;
+                right: 15px;
+            }
+            
+            .makgothi-chat-bubble {
+                width: 280px;
+                right: -20px;
+            }
+            
+            .makgothi-toggle-controls {
+                right: -20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navbar -->
+    {% comment %} <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'main:home' %}">Dashboard</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+
+                <!-- Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" 
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle me-1"></i> Account
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <!-- Future options -->
+                        <li><a class="dropdown-item" href="#">Profile</a></li>
+                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <!-- Logout -->
+                        <li><a class="dropdown-item text-danger" href="{% url 'register_login:login' %}">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a></li>
+                    </ul>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+</nav> {% endcomment %}
+
+
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+        <i class="bi bi-chevron-left toggle-icon"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <h5>Navigator</h5>
+        </div>
+        <ul class="nav nav-pills flex-column mb-auto px-3">
+            <li class="nav-item">
+                <a href="{% url 'main:home' %}" class="nav-link align-middle">
+                    <i class="bi bi-house fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Home</span>
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle align-middle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-bar-chart fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Admin</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                    <li><a class="dropdown-item" href="{% url 'main:client' %}">Clients</a></li> <!-- Changed Name from Departments to Clients-->
+                    <li><a class="dropdown-item" href="{% url 'main:site' %}">Sites</a></li>
+                    <li><a class="dropdown-item" href="/driver-expiry-warnings/" onclick="console.log('User Expiry clicked:', this.href); window.location.href = this.href; return false;">User Expiry</a></li>
+                </ul>
+            </li>
+
+
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle align-middle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi-clipboard fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Registration</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                    <li><a class="dropdown-item" href="{% url 'register_login:register' %}">Register Driver</a></li> <!-- Drop down allows Baneele to Register Clients and Sites-->
+                    <li><a class="dropdown-item" href="{% url 'register_login:register_controller' %}">Register Controller</a></li>
+                    <li><a class="dropdown-item" href="{% url 'register_login:register_client' %}">Register Client</a></li> <!-- Drop down allows Baneele to Register Clients and Sites-->
+                    <li><a class="dropdown-item" href="{% url 'register_login:register_site' %}">Register Site</a></li>
+                    <li><a class="dropdown-item" href="{% url 'main:vehicle_add' %}">Register Vehicle</a></li>
+                    
+                </ul>
+            </li>
+
+            <!-- Controller Shift Management (Only for Controllers and Admins) -->
+            {% if user.is_staff or user.controllermodel %}
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle align-middle" href="#" id="shiftDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-people-fill fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Shift Management</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="shiftDropdown">
+                    <li><a class="dropdown-item" href="{% url 'register_login:shift_handover_dashboard' %}">
+                        <i class="bi bi-speedometer2 me-2"></i>Shift Handover Dashboard
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'register_login:controller_activity_log' %}">
+                        <i class="bi bi-clipboard-data me-2"></i>Activity Log
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'main:daily_rev_report' %}">
+                        <i class="bi bi-currency-dollar me-2"></i>Submit Revenue Report
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'main:daily_cost_report' %}">
+                        <i class="bi bi-fuel-pump me-2"></i>Submit Cost Report
+                    </a></li>
+                </ul>
+            </li>
+            {% endif %}
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle align-middle" href="#" id="vehiclesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi-truck fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Vehicles</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="vehiclesDropdown">
+                    <li><a class="dropdown-item" href="{% url 'main:vehicle_list' %}">All Vehicles</a></li>
+                    <li><a class="dropdown-item" href="{% url 'main:vehicle_add' %}">Add Vehicle</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% comment %} <li><a class="dropdown-item" href="{% url 'main:drag_drop_assignments' %}"><i class="bi bi-cursor me-2"></i>Drag & Drop Assignments</a></li> {% endcomment %}
+                    <li><hr class="dropdown-divider"></li>
+                    {% comment %} <li><a class="dropdown-item" href="{% url 'driverAssignment:driver_vehicle_assignments' %}">Driver-Vehicle Assignments</a></li> {% endcomment %}
+                    <li><a class="dropdown-item" href="{% url 'driverAssignment:complete_assignments' %}">Complete Assignments</a></li>
+                </ul>
+            </li>
+
+
+
+
+
+
+            {% comment %} <li class="nav-item dropdown"> OPERATIONS TAB
+                <a class="nav-link dropdown-toggle align-middle" href="#" id="operationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-bar-chart fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Operations</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="operationsDropdown">
+                    <li><a class="dropdown-item" href="{% url 'main:daily_rev_report' %}">Daily Operations</a></li>
+                    <li><a class="dropdown-item" href="#">Workflows</a></li>
+                    <li><a class="dropdown-item" href="#">Tasks</a></li>
+                </ul>
+            </li> {% endcomment %}
+
+            <li class="nav-item dropdown">
+                {% comment %} <a class="nav-link dropdown-toggle align-middle" href="#" id="logisticsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi-truck fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Logistics</span>
+                </a> THIS IS THE FLEET MANAGENEMENT TAB I MADE{% endcomment %}
+                <ul class="dropdown-menu" aria-labelledby="logisticsDropdown">
+                    <li><a class="dropdown-item" href="{% url 'logistics:all_deliveries' %}">Manage Delivery</a></li>
+                     <li><a class="dropdown-item" href="{% url 'driverAssignment:all_routes' %}">Fleet Distribution Manager</a></li>
+                    {% comment %} <li><a class="dropdown-item" href="#">Tracking</a></li> {% endcomment %}
+                </ul>
+            </li>
+
+
+             <!-- Sidebar -->
+
+
+
+
+
+
+            <li class="nav-item">
+                <a href="{% url 'main:daily_rev_report' %}" class="nav-link align-middle">
+                    <i class="bi-cash-coin fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Daily Revenue Report</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'main:daily_cost_report' %}" class="nav-link align-middle">
+                    <i class="bi bi-pie-chart fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Daily Cost Report</span>
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle align-middle" href="#" id="routeDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-signpost-2 fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Route Management</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="routeDropdown">
+                    <li><a class="dropdown-item" href="{% url 'main:route_list' %}">Manage Routes</a></li>
+                    <li><a class="dropdown-item" href="{% url 'main:route_add' %}">Add New Route</a></li>
+                </ul>
+            </li>
+
+           <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle align-middle" href="#" id="logisticsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi-graph-up fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Analytics and Finance</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="logisticsDropdown">
+                    <li><a class="dropdown-item" href="{% url 'main:consolidated_analytics' %}"><i class="bi bi-speedometer2 me-2"></i>Fleet Dashboard (All-in-One)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'main:fuel_prices_analytics' %}">Real Time Fuel Data</a></li>
+                     <li><a class="dropdown-item" href="{% url 'main:cost_revenue_analytics' %}">Revenue and Cost Performance</a></li>
+                     {% comment %} <li><a class="dropdown-item" href="{% url 'main:analytics_dashboard' %}">Detailed Analytics</a></li> {% endcomment %}
+                    {% comment %} <li><a class="dropdown-item" href="#">Tracking</a></li> {% endcomment %}
+                </ul>
+            </li>
+
+            <li class="nav-item">
+                <a href="{% url 'main:active_users' %}" class="nav-link align-middle">
+                    <i class="bi bi-people fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Active Users</span>
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle align-middle" href="#" id="revenueDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-currency-dollar fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Revenue Reports</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="revenueDropdown">
+                    <li><a class="dropdown-item" href="{% url 'main:revenue' %}">All Revenue</a></li>
+                    <li><a class="dropdown-item" href="{% url 'main:driver_revenue_list' %}">Individual Driver Revenue</a></li>
+                </ul>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle align-middle" href="#" id="costDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-wallet fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Cost Reports</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="costDropdown">
+                    <li><a class="dropdown-item" href="{% url 'main:cost' %}">All Costs</a></li>
+                    <li><a class="dropdown-item" href="{% url 'main:driver_cost_list' %}">Individual Driver Costs</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'main:fuel_rate_management' %}">
+                        <i class="bi bi-fuel-pump me-2"></i>Fuel Rate Management
+                    </a></li>
+                </ul>
+            </li>
+
+            <li class="nav-item">
+                <a href="{% url 'main:bookkeeping' %}" class="nav-link align-middle">
+                    <i class="bi bi-journal-text fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Bookkeeping</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{% url 'main:live_map' %}" class="nav-link align-middle">
+                    <i class="bi bi-geo-alt fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Live Map</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{% url 'main:weather_data' %}" class="nav-link align-middle">
+                    <i class="bi bi-sun fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Weather</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{% url 'main:ai_assistant' %}" class="nav-link align-middle">
+                    <i class="bi bi-robot fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">AI-Assistant</span>
+                </a>
+            </li>
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle align-middle" href="#" id="crmDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-robot fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">AI Fleet CRM</span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="crmDropdown">
+                    <li><a class="dropdown-item" href="{% url 'crm:dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>AI CRM Dashboard</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'crm:prospect_approval_list' %}"><i class="bi bi-clipboard-check me-2"></i>Approve Prospects</a></li>
+                    <li><a class="dropdown-item" href="{% url 'crm:agents' %}"><i class="bi bi-robot me-2"></i>AI Agents</a></li>
+                    <li><a class="dropdown-item" href="{% url 'crm:clients' %}"><i class="bi bi-briefcase me-2"></i>Converted Clients</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'crm:performance' %}"><i class="bi bi-graph-up me-2"></i>AI Performance</a></li>
+                    <li><a class="dropdown-item" href="{% url 'crm:hunting_logs' %}"><i class="bi bi-search me-2"></i>Hunting Logs</a></li>
+                </ul>
+            </li>
+
+
+        </ul>
+        
+        <!-- User Information Section -->
+        {% if user.is_authenticated %}
+        <div class="sidebar-user mt-auto px-3 py-3 border-top border-secondary">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" 
+                     style="width: 40px; height: 40px;">
+                    <i class="bi bi-person-fill text-white"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="text-white fw-bold small">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="text-light small opacity-75">{{ user.email|default:"No email" }}</div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-link text-light p-1" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'main:active_users' %}">
+                            <i class="bi bi-person me-2"></i>Profile
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'register_login:login' %}">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <div class="container-fluid">
+            {% block content %}
+            <!-- Default content can go here -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Welcome to the Dashboard</h5>
+                            <p class="card-text">Select an option from the sidebar to view reports, analytics, or other data.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endblock %}
+        </div>
+    </main>
+
+    <!-- Makgothi Jnr Assistant -->
+    <div class="makgothi-assistant" id="makgothiAssistant">
+        <!-- Toggle Controls -->
+        <div class="makgothi-toggle-controls">
+            <button class="makgothi-toggle-btn" id="activateBtn">Activate</button>
+            <button class="makgothi-toggle-btn" id="deactivateBtn">Deactivate</button>
+        </div>
+        
+        <!-- Avatar -->
+        <div class="makgothi-avatar" id="makgothiAvatar">
+            <div class="makgothi-status-indicator" id="statusIndicator"></div>
+        </div>
+
+        <!-- Chat Bubble -->
+        <div class="makgothi-chat-bubble" id="chatBubble">
+            <div class="makgothi-chat-header">
+                <h6>Makgothi Jnr - Your Fleet Assistant</h6>
+                <button class="makgothi-close-btn" id="closeChatBtn">&times;</button>
+            </div>
+            <div class="makgothi-chat-body" id="chatBody">
+                <div class="makgothi-message" id="welcomeMessage">
+                    Hey there! I'm Makgothi Jnr, your chibi helper with dreads! 👦🏾 I'm here to guide you through the Fleet Management System. Click on any of the help topics below to get started!
+                </div>
+                <div class="makgothi-help-buttons">
+                    <button class="makgothi-help-btn" onclick="showHelp('navigation')">Navigation Help</button>
+                    <button class="makgothi-help-btn" onclick="showHelp('warnings')">Warning Meanings</button>
+                    <button class="makgothi-help-btn" onclick="showHelp('reports')">Reports Guide</button>
+                    <button class="makgothi-help-btn" onclick="showHelp('routes')">Route Management</button>
+                    <button class="makgothi-help-btn" onclick="showHelp('drivers')">Driver Assignment</button>
+                    <button class="makgothi-help-btn" onclick="showHelp('bookkeeping')">Bookkeeping Guide</button>
+                    <button class="makgothi-help-btn" onclick="showHelp('analytics')">Analytics Help</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Sidebar Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            
+            // Check if user preference is stored
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                toggleSidebar(true);
+            }
+            
+            // Toggle sidebar function
+            function toggleSidebar(collapsed = null) {
+                const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
+                const shouldCollapse = collapsed !== null ? collapsed : !isCurrentlyCollapsed;
+                
+                if (shouldCollapse) {
+                    sidebar.classList.add('collapsed');
+                    mainContent.classList.add('collapsed');
+                    sidebarToggle.classList.add('collapsed');
+                    localStorage.setItem('sidebarCollapsed', 'true');
+                } else {
+                    sidebar.classList.remove('collapsed');
+                    mainContent.classList.remove('collapsed');
+                    sidebarToggle.classList.remove('collapsed');
+                    localStorage.setItem('sidebarCollapsed', 'false');
+                }
+            }
+            
+            // Toggle button click event
+            sidebarToggle.addEventListener('click', function() {
+                toggleSidebar();
+            });
+            
+            // Handle responsive behavior
+            function handleResize() {
+                if (window.innerWidth <= 992) {
+                    // Mobile behavior - hide sidebar by default
+                    sidebar.classList.remove('show');
+                    sidebarToggle.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        sidebar.classList.toggle('show');
+                    });
+                    
+                    // Close sidebar when clicking outside
+                    document.addEventListener('click', function(e) {
+                        if (window.innerWidth <= 992 && 
+                            !sidebar.contains(e.target) && 
+                            !sidebarToggle.contains(e.target)) {
+                            sidebar.classList.remove('show');
+                        }
+                    });
+                } else {
+                    // Desktop behavior
+                    sidebar.classList.remove('show');
+                }
+            }
+            
+            // Initial resize handling
+            handleResize();
+            
+            // Handle window resize
+            window.addEventListener('resize', handleResize);
+            
+            // Add smooth scrolling to sidebar
+            const sidebarLinks = document.querySelectorAll('.sidebar .nav-link:not(.dropdown-toggle)');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    // Add active state (optional)
+                    sidebarLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Ensure dropdown functionality works
+            const dropdownItems = document.querySelectorAll('.dropdown-item');
+            dropdownItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    console.log('Dropdown item clicked:', this.href);
+                    // Allow normal navigation for dropdown items
+                    if (this.href && this.href !== '#') {
+                        e.preventDefault();
+                        window.location.href = this.href;
+                    }
+                });
+            });
+
+            // Handle dropdown menus in collapsed state
+            const dropdowns = document.querySelectorAll('.sidebar .dropdown');
+            dropdowns.forEach(dropdown => {
+                const toggle = dropdown.querySelector('.dropdown-toggle');
+                const menu = dropdown.querySelector('.dropdown-menu');
+                
+                if (toggle && menu) {
+                    toggle.addEventListener('mouseenter', function() {
+                        if (sidebar.classList.contains('collapsed')) {
+                            menu.style.position = 'fixed';
+                            menu.style.left = '70px';
+                            menu.style.top = this.getBoundingClientRect().top + 'px';
+                            menu.style.display = 'block';
+                        }
+                    });
+                    
+                    dropdown.addEventListener('mouseleave', function() {
+                        if (sidebar.classList.contains('collapsed')) {
+                            menu.style.display = 'none';
+                        }
+                    });
+                }
+            });
+            
+            // Keyboard shortcut (Ctrl/Cmd + B)
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                    e.preventDefault();
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // Makgothi Jnr Assistant Functionality
+        const makgothiAssistant = document.getElementById('makgothiAssistant');
+        const makgothiAvatar = document.getElementById('makgothiAvatar');
+        const chatBubble = document.getElementById('chatBubble');
+        const closeChatBtn = document.getElementById('closeChatBtn');
+        const activateBtn = document.getElementById('activateBtn');
+        const deactivateBtn = document.getElementById('deactivateBtn');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const chatBody = document.getElementById('chatBody');
+
+        // Check if Makgothi is activated (default: activated)
+        let isActivated = localStorage.getItem('makgothiActivated') !== 'false';
+        
+        // Initialize Makgothi state
+        function initializeMakgothi() {
+            if (isActivated) {
+                statusIndicator.classList.remove('inactive');
+                activateBtn.classList.add('active');
+                deactivateBtn.classList.remove('active');
+                makgothiAssistant.style.display = 'block';
+            } else {
+                statusIndicator.classList.add('inactive');
+                deactivateBtn.classList.add('active');
+                activateBtn.classList.remove('active');
+                makgothiAssistant.style.display = 'none';
+            }
+        }
+
+        // Avatar click to show/hide chat
+        makgothiAvatar.addEventListener('click', function() {
+            if (isActivated) {
+                chatBubble.classList.toggle('active');
+            }
+        });
+
+        // Close chat bubble
+        closeChatBtn.addEventListener('click', function() {
+            chatBubble.classList.remove('active');
+        });
+
+        // Activate assistant
+        activateBtn.addEventListener('click', function() {
+            isActivated = true;
+            localStorage.setItem('makgothiActivated', 'true');
+            initializeMakgothi();
+            showContextualHelp('activated');
+        });
+
+        // Deactivate assistant
+        deactivateBtn.addEventListener('click', function() {
+            isActivated = false;
+            localStorage.setItem('makgothiActivated', 'false');
+            initializeMakgothi();
+            chatBubble.classList.remove('active');
+        });
+
+        // Help content system
+        const helpContent = {
+            navigation: {
+                title: "Navigation Help 🧭",
+                content: `
+                    <strong>Getting Around the Fleet System:</strong><br>
+                    • Use the sidebar on the left to navigate between different sections<br>
+                    • Click the hamburger button (☰) to collapse/expand the sidebar<br>
+                    • Dropdown menus contain related functions - hover over them!<br>
+                    • The breadcrumb trail shows where you are in the system<br><br>
+                    <strong>Quick Tip:</strong> Use Ctrl+B to quickly toggle the sidebar!
+                `
+            },
+            warnings: {
+                title: "Warning Meanings ⚠️",
+                content: `
+                    <strong>Common System Warnings:</strong><br>
+                    • <span style="color: #dc3545;">Red alerts</span>: Critical issues requiring immediate attention<br>
+                    • <span style="color: #fd7e14;">Orange warnings</span>: Important notifications to review<br>
+                    • <span style="color: #ffc107;">Yellow cautions</span>: General reminders or minor issues<br>
+                    • <span style="color: #198754;">Green indicators</span>: All systems operating normally<br><br>
+                    <strong>Driver Expiry Warnings:</strong> License, permit, or certification renewals needed
+                `
+            },
+            reports: {
+                title: "Reports Guide 📊",
+                content: `
+                    <strong>Understanding Your Reports:</strong><br>
+                    • <strong>Daily Revenue:</strong> Track income from all routes and drivers<br>
+                    • <strong>Daily Costs:</strong> Monitor fuel, maintenance, and operational expenses<br>
+                    • <strong>Driver Reports:</strong> Individual performance and earnings<br>
+                    • <strong>Analytics:</strong> Trends, comparisons, and insights<br><br>
+                    <strong>Pro Tip:</strong> Use date filters to compare performance over different periods!
+                `
+            },
+            routes: {
+                title: "Route Management 🛣️",
+                content: `
+                    <strong>Managing Your Routes:</strong><br>
+                    • Create new routes with start/end points and stops<br>
+                    • Assign drivers to specific routes for better tracking<br>
+                    • Monitor route performance and profitability<br>
+                    • View integrated route assignments in one place<br><br>
+                    <strong>Best Practice:</strong> Regularly review route efficiency and adjust as needed
+                `
+            },
+            drivers: {
+                title: "Driver Assignment 👥",
+                content: `
+                    <strong>Driver Management:</strong><br>
+                    • Assign drivers to specific routes and vehicles<br>
+                    • Track driver performance and earnings<br>
+                    • Monitor license and certification expiry dates<br>
+                    • View driver availability and scheduling<br><br>
+                    <strong>Important:</strong> Keep driver documents updated to avoid compliance issues!
+                `
+            },
+            analytics: {
+                title: "Analytics Help 📈",
+                content: `
+                    <strong>Understanding Your Analytics:</strong><br>
+                    • <strong>Real-time Fuel Data:</strong> Current market prices and trends<br>
+                    • <strong>Revenue Performance:</strong> Income analysis by route, driver, or period<br>
+                    • <strong>Cost Analytics:</strong> Expense breakdown and optimization opportunities<br>
+                    • <strong>Weather Integration:</strong> Plan routes based on weather conditions<br><br>
+                    <strong>Insight:</strong> Use analytics to identify your most profitable routes and drivers!
+                `
+            },
+            bookkeeping: {
+                title: "Bookkeeping Guide 📊",
+                content: `
+                    <strong>Your Complete Fleet Financial Overview:</strong><br>
+                    • <strong>Comprehensive View:</strong> All vehicles, routes, and revenue in one place<br>
+                    • <strong>Excel Export:</strong> Download complete data for external analysis<br>
+                    • <strong>Search & Filter:</strong> Find specific records by driver, vehicle, or route<br>
+                    • <strong>Real-time Totals:</strong> Automatic calculation of planned vs actual revenue<br><br>
+                    <strong>Tip:</strong> Use this for monthly reconciliation and financial reporting!
+                `
+            },
+            activated: {
+                title: "Welcome Back! 🎉",
+                content: `
+                    Great to see you again! I'm now active and ready to help you navigate the Fleet Management System. 
+                    Feel free to click on any help topic above, or just click on me anytime you need assistance!<br><br>
+                    <strong>Remember:</strong> I'll stay active until you choose to deactivate me. I'm here whenever you need guidance!
+                `
+            }
+        };
+
+        // Show help function
+        window.showHelp = function(topic) {
+            const help = helpContent[topic];
+            if (help) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'makgothi-message';
+                messageDiv.innerHTML = `<strong>${help.title}</strong><br><br>${help.content}`;
+                chatBody.appendChild(messageDiv);
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+        };
+
+        // Show contextual help based on current page
+        function showContextualHelp(context) {
+            const currentPath = window.location.pathname;
+            let contextualTopic = null;
+
+            if (context === 'activated') {
+                contextualTopic = 'activated';
+            } else if (currentPath.includes('route')) {
+                contextualTopic = 'routes';
+            } else if (currentPath.includes('driver') || currentPath.includes('assignment')) {
+                contextualTopic = 'drivers';
+            } else if (currentPath.includes('bookkeeping')) {
+                contextualTopic = 'bookkeeping';
+            } else if (currentPath.includes('revenue') || currentPath.includes('cost') || currentPath.includes('analytics')) {
+                contextualTopic = 'analytics';
+            } else if (currentPath.includes('daily')) {
+                contextualTopic = 'reports';
+            }
+
+            if (contextualTopic && isActivated) {
+                setTimeout(() => {
+                    showHelp(contextualTopic);
+                    chatBubble.classList.add('active');
+                }, 1500);
+            }
+        }
+
+        // Initialize Makgothi when page loads
+        initializeMakgothi();
+        
+        // Show contextual help after page loads
+        setTimeout(() => {
+            if (isActivated) {
+                showContextualHelp();
+            }
+        }, 2000);
+
+        // Close chat when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!makgothiAssistant.contains(e.target)) {
+                chatBubble.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

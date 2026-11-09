@@ -1,0 +1,194 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Agent Performance{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-graph-up text-warning me-2"></i>
+                        Agent Performance Dashboard
+                    </h2>
+                    <p class="text-muted mb-0">Monitor and analyze agent productivity and success metrics</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Performance Cards -->
+    <div class="row">
+        {% for agent in agents %}
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        {% if agent.profile_picture %}
+                        <img src="{{ agent.profile_picture.url }}" alt="{{ agent.full_name }}" 
+                             class="rounded-circle me-3" width="40" height="40">
+                        {% else %}
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
+                             style="width: 40px; height: 40px;">
+                            <span class="text-white fw-bold">{{ agent.first_name.0 }}{{ agent.last_name.0 }}</span>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-0">{{ agent.full_name }}</h6>
+                            <small class="text-muted">
+                                <i class="bi bi-{{ agent.agent_type|yesno:'robot,person' }} me-1"></i>
+                                {{ agent.get_agent_type_display }}
+                            </small>
+                        </div>
+                    </div>
+                    <span class="badge bg-{{ agent.status|yesno:'success,secondary' }}">
+                        {{ agent.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <!-- Key Metrics -->
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="fs-4 fw-bold text-primary">{{ agent.client_count|default:0 }}</div>
+                            <div class="small text-muted">Total Clients</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-4 fw-bold text-success">{{ agent.active_client_count|default:0 }}</div>
+                            <div class="small text-muted">Active</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-6 fw-bold text-info">{{ agent.commission_rate }}%</div>
+                            <div class="small text-muted">Commission</div>
+                        </div>
+                    </div>
+
+                    <!-- Potential Value -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small text-muted">Potential Value</span>
+                            <span class="small fw-bold">R{{ agent.total_potential|default:0|floatformat:2 }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {% if agent.total_potential %}{% widthratio agent.total_potential 50000 100 %}%{% else %}0%{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Satisfaction Rating -->
+                    {% if agent.avg_satisfaction %}
+                    <div class="mb-3">
+                        <div class="small text-muted mb-1">Average Satisfaction</div>
+                        <div class="d-flex align-items-center">
+                            <div class="d-flex me-2">
+                                {% with rating=agent.avg_satisfaction|floatformat:0 %}
+                                {% for i in "12345"|make_list %}
+                                    <i class="bi bi-star{% if forloop.counter <= rating|add:0 %}-fill text-warning{% endif %} small"></i>
+                                {% endfor %}
+                                {% endwith %}
+                            </div>
+                            <span class="small">{{ agent.avg_satisfaction|floatformat:1 }}/5</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Commission Earned -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small text-muted">Total Commission</span>
+                        <span class="fw-bold text-success">R{{ agent.total_commission_earned|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'crm:agent_detail' agent.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye me-1"></i>View Details
+                        </a>
+                        <a href="{% url 'crm:agent_performance_detail' agent.id %}" class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-graph-up me-1"></i>Performance
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-graph-up text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No Agents Found</h4>
+                <p class="text-muted">Add agents to start tracking performance metrics.</p>
+                <a href="{% url 'crm:agent_add' %}" class="btn btn-primary">
+                    <i class="bi bi-person-plus me-1"></i>Add First Agent
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Monthly Performance Trends -->
+    {% if monthly_performance %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>Monthly Performance Trends
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Month/Year</th>
+                                    <th>Clients Acquired</th>
+                                    <th>Revenue Generated</th>
+                                    <th>Commission Paid</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for performance in monthly_performance %}
+                                <tr>
+                                    <td>{{ performance.month }}/{{ performance.year }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ performance.total_clients_acquired|default:0 }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-success fw-bold">R{{ performance.total_revenue|default:0|floatformat:2 }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-info fw-bold">R{{ performance.total_commission|default:0|floatformat:2 }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.progress {
+    background-color: #e9ecef;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.rounded-circle {
+    object-fit: cover;
+}
+</style>
+{% endblock %}

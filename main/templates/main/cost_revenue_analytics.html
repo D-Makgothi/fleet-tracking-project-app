@@ -1,0 +1,9 @@
+{% extends 'main/base.html' %}
+
+{% block title %}{{ title|default:"Cost & Revenue Analytics" }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    {% include 'main/cost_revenue_content.html' %}
+</div>
+{% endblock %}

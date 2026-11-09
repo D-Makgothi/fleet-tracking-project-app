@@ -1,0 +1,545 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Analytics & Finance Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="analytics-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-12">
+                <div class="header-content">
+                    <div class="header-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <div>
+                        <h2 class="h3 mb-1 fw-bold">Analytics & Finance Dashboard</h2>
+                        <p class="text-muted mb-0">Comprehensive insights into fleet performance, costs, and market conditions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <!-- Enhanced Tab Navigation -->
+            <div class="analytics-tabs-container mb-4">
+                <ul class="nav analytics-nav-tabs" id="analyticsTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="fuel-prices-tab" data-bs-toggle="tab" data-bs-target="#fuel-prices"
+                                type="button" role="tab" aria-controls="fuel-prices" aria-selected="true">
+                            <div class="tab-content-wrapper">
+                                <i class="bi bi-fuel-pump tab-icon"></i>
+                                <div class="tab-text">
+                                    <span class="tab-title">Live Fuel Prices</span>
+                                    <small class="tab-subtitle">Real-time market data</small>
+                                </div>
+                            </div>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="cost-revenue-tab" data-bs-toggle="tab" data-bs-target="#cost-revenue"
+                                type="button" role="tab" aria-controls="cost-revenue" aria-selected="false">
+                            <div class="tab-content-wrapper">
+                                <i class="bi bi-pie-chart tab-icon"></i>
+                                <div class="tab-text">
+                                    <span class="tab-title">Cost & Revenue Analytics</span>
+                                    <small class="tab-subtitle">Performance insights</small>
+                                </div>
+                            </div>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="weather-tab" data-bs-toggle="tab" data-bs-target="#weather"
+                                type="button" role="tab" aria-controls="weather" aria-selected="false">
+                            <div class="tab-content-wrapper">
+                                <i class="bi bi-cloud-sun tab-icon"></i>
+                                <div class="tab-text">
+                                    <span class="tab-title">Weather Conditions</span>
+                                    <small class="tab-subtitle">Fleet operation impact</small>
+                                </div>
+                            </div>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Enhanced Tab Content -->
+            <div class="tab-content analytics-tab-content" id="analyticsTabContent">
+                <div class="tab-pane fade show active" id="fuel-prices" role="tabpanel" aria-labelledby="fuel-prices-tab">
+                    <div class="content-container">
+                        <div id="fuel-prices-content">
+                            <div class="loading-state">
+                                <div class="loading-icon">
+                                    <i class="bi bi-fuel-pump loading-spinner"></i>
+                                </div>
+                                <h5 class="mb-2">Loading Fuel Prices</h5>
+                                <p class="text-muted">Fetching real-time market data...</p>
+                                <div class="progress loading-progress">
+                                    <div class="progress-bar progress-bar-animated" role="progressbar"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="cost-revenue" role="tabpanel" aria-labelledby="cost-revenue-tab">
+                    <div class="content-container">
+                        <div id="cost-revenue-content">
+                            <div class="loading-state">
+                                <div class="loading-icon">
+                                    <i class="bi bi-pie-chart loading-spinner"></i>
+                                </div>
+                                <h5 class="mb-2">Loading Analytics</h5>
+                                <p class="text-muted">Preparing performance insights...</p>
+                                <div class="progress loading-progress">
+                                    <div class="progress-bar progress-bar-animated" role="progressbar"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="weather" role="tabpanel" aria-labelledby="weather-tab">
+                    <div class="content-container">
+                        <div id="weather-content">
+                            <div class="loading-state">
+                                <div class="loading-icon">
+                                    <i class="bi bi-cloud-sun loading-spinner"></i>
+                                </div>
+                                <h5 class="mb-2">Loading Weather Data</h5>
+                                <p class="text-muted">Gathering current conditions...</p>
+                                <div class="progress loading-progress">
+                                    <div class="progress-bar progress-bar-animated" role="progressbar"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Analytics Dashboard - Corporate SaaS Styling */
+.analytics-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+    100% { transform: translateY(0px); }
+}
+
+/* Enhanced Tab Navigation */
+.analytics-tabs-container {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.analytics-nav-tabs {
+    border: none;
+    gap: 0.5rem;
+}
+
+.analytics-nav-tabs .nav-item {
+    flex: 1;
+}
+
+.analytics-nav-tabs .nav-link {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    color: #64748b;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    border-bottom: none;
+}
+
+.analytics-nav-tabs .nav-link:hover {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #2563eb;
+}
+
+.analytics-nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+}
+
+.analytics-nav-tabs .nav-link.active:hover {
+    background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+    color: white;
+}
+
+.tab-content-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-align: left;
+    width: 100%;
+}
+
+.tab-icon {
+    font-size: 1.5rem;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.analytics-nav-tabs .nav-link.active .tab-icon {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.tab-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.tab-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.tab-subtitle {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+/* Enhanced Tab Content */
+.analytics-tab-content {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    min-height: 500px;
+}
+
+.content-container {
+    padding: 2rem;
+}
+
+/* Enhanced Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+    padding: 3rem;
+}
+
+.loading-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.loading-spinner {
+    font-size: 2rem;
+    color: #2563eb;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.loading-progress {
+    width: 200px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.loading-progress .progress-bar {
+    background: linear-gradient(90deg, #2563eb, #7c3aed);
+    width: 100%;
+    animation: loading-progress 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-progress {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Error State Styling */
+.alert-danger {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    border: 1px solid #fca5a5;
+    border-radius: 12px;
+    color: #dc2626;
+    padding: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .analytics-header {
+        padding: 1.5rem;
+    }
+
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .analytics-nav-tabs {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .tab-content-wrapper {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+
+    .tab-text {
+        align-items: center;
+    }
+
+    .content-container {
+        padding: 1rem;
+    }
+
+    .loading-state {
+        padding: 2rem 1rem;
+        min-height: 300px;
+    }
+
+    .loading-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 1.5rem;
+    }
+
+    .loading-spinner {
+        font-size: 1.5rem;
+    }
+}
+
+/* Animation for content loading */
+.analytics-tab-content .tab-pane {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.analytics-tab-content .tab-pane.active {
+    animation-delay: 0.1s;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    // Load fuel prices content by default
+    loadFuelPricesContent();
+
+    // Handle tab switching - Bootstrap 5 syntax with button tabs
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        var target = $(e.target).attr("data-bs-target");
+        if (target === '#fuel-prices') {
+            loadFuelPricesContent();
+        } else if (target === '#cost-revenue') {
+            loadCostRevenueContent();
+        } else if (target === '#weather') {
+            loadWeatherContent();
+        }
+    });
+
+    function loadFuelPricesContent() {
+        // Show enhanced loading state
+        $('#fuel-prices-content').html(`
+            <div class="loading-state">
+                <div class="loading-icon">
+                    <i class="bi bi-fuel-pump loading-spinner"></i>
+                </div>
+                <h5 class="mb-2">Loading Fuel Prices</h5>
+                <p class="text-muted">Fetching real-time market data...</p>
+                <div class="progress loading-progress">
+                    <div class="progress-bar progress-bar-animated" role="progressbar"></div>
+                </div>
+            </div>
+        `);
+
+        $.ajax({
+            url: "{% url 'main:fuel_prices_analytics' %}",
+            type: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(data) {
+                // Add smooth transition
+                setTimeout(function() {
+                    $('#fuel-prices-content').html(data);
+                }, 500);
+            },
+            error: function() {
+                $('#fuel-prices-content').html(`
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Error loading fuel prices data.</strong>
+                        <p class="mb-0 mt-2">Please check your connection and try again.</p>
+                        <button class="btn btn-outline-danger btn-sm mt-2" onclick="loadFuelPricesContent()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Retry
+                        </button>
+                    </div>
+                `);
+            }
+        });
+    }
+
+    function loadCostRevenueContent() {
+        // Show enhanced loading state
+        $('#cost-revenue-content').html(`
+            <div class="loading-state">
+                <div class="loading-icon">
+                    <i class="bi bi-pie-chart loading-spinner"></i>
+                </div>
+                <h5 class="mb-2">Loading Analytics</h5>
+                <p class="text-muted">Preparing performance insights...</p>
+                <div class="progress loading-progress">
+                    <div class="progress-bar progress-bar-animated" role="progressbar"></div>
+                </div>
+            </div>
+        `);
+
+        $.ajax({
+            url: "{% url 'main:cost_revenue_analytics' %}",
+            type: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(data) {
+                // Add smooth transition
+                setTimeout(function() {
+                    $('#cost-revenue-content').html(data);
+                }, 500);
+            },
+            error: function() {
+                $('#cost-revenue-content').html(`
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Error loading analytics data.</strong>
+                        <p class="mb-0 mt-2">Please check your connection and try again.</p>
+                        <button class="btn btn-outline-danger btn-sm mt-2" onclick="loadCostRevenueContent()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Retry
+                        </button>
+                    </div>
+                `);
+            }
+        });
+    }
+
+    function loadWeatherContent() {
+        // Show enhanced loading state
+        $('#weather-content').html(`
+            <div class="loading-state">
+                <div class="loading-icon">
+                    <i class="bi bi-cloud-sun loading-spinner"></i>
+                </div>
+                <h5 class="mb-2">Loading Weather Data</h5>
+                <p class="text-muted">Gathering current conditions...</p>
+                <div class="progress loading-progress">
+                    <div class="progress-bar progress-bar-animated" role="progressbar"></div>
+                </div>
+            </div>
+        `);
+
+        $.ajax({
+            url: "{% url 'main:weather_data' %}",
+            type: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(data) {
+                // Add smooth transition
+                setTimeout(function() {
+                    $('#weather-content').html(data);
+                }, 500);
+            },
+            error: function() {
+                $('#weather-content').html(`
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Error loading weather data.</strong>
+                        <p class="mb-0 mt-2">Please check your connection and try again.</p>
+                        <button class="btn btn-outline-danger btn-sm mt-2" onclick="loadWeatherContent()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Retry
+                        </button>
+                    </div>
+                `);
+            }
+        });
+    }
+
+    // Make functions globally accessible for retry buttons
+    window.loadFuelPricesContent = loadFuelPricesContent;
+    window.loadCostRevenueContent = loadCostRevenueContent;
+    window.loadWeatherContent = loadWeatherContent;
+});
+</script>
+{% endblock %}

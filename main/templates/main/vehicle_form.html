@@ -1,0 +1,153 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-truck me-2"></i>{{ title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.vehicle_make.id_for_label }}" class="form-label">
+                                        <i class="bi bi-truck me-2"></i>Vehicle Make *
+                                    </label>
+                                    {{ form.vehicle_make }}
+                                    {% if form.vehicle_make.help_text %}
+                                        <small class="form-text text-muted">{{ form.vehicle_make.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.vehicle_make.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.vehicle_make.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.vehicle_registration_no.id_for_label }}" class="form-label">
+                                        <i class="bi bi-card-text me-2"></i>Registration Number *
+                                    </label>
+                                    {{ form.vehicle_registration_no }}
+                                    {% if form.vehicle_registration_no.help_text %}
+                                        <small class="form-text text-muted">{{ form.vehicle_registration_no.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.vehicle_registration_no.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.vehicle_registration_no.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.vehicle_registration_expiry.id_for_label }}" class="form-label">
+                                        <i class="bi bi-calendar me-2"></i>Registration Expiry Date *
+                                    </label>
+                                    {{ form.vehicle_registration_expiry }}
+                                    {% if form.vehicle_registration_expiry.help_text %}
+                                        <small class="form-text text-muted">{{ form.vehicle_registration_expiry.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.vehicle_registration_expiry.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.vehicle_registration_expiry.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <div class="form-check mt-4">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                            <i class="bi bi-check-circle me-2"></i>Vehicle is Active
+                                        </label>
+                                        {% if form.is_active.help_text %}
+                                            <small class="form-text text-muted d-block">{{ form.is_active.help_text }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-4">
+                            <label for="{{ form.fleetcam_link.id_for_label }}" class="form-label">
+                                <i class="bi bi-camera-video me-2"></i>FleetCam Monitoring Link
+                            </label>
+                            {{ form.fleetcam_link }}
+                            {% if form.fleetcam_link.help_text %}
+                                <small class="form-text text-muted">{{ form.fleetcam_link.help_text }}</small>
+                            {% endif %}
+                            {% if form.fleetcam_link.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.fleetcam_link.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'main:vehicle_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Back to Vehicle List
+                            </a>
+                            <div>
+                                {% if vehicle %}
+                                    <a href="{% url 'main:vehicle_delete' vehicle.id %}" class="btn btn-outline-danger me-2">
+                                        <i class="bi bi-trash me-2"></i>Delete Vehicle
+                                    </a>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>
+                                    {% if vehicle %}Update Vehicle{% else %}Add Vehicle{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 15px;
+        border: none;
+    }
+    
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .form-check-label {
+        font-weight: 500;
+    }
+</style>
+{% endblock %}

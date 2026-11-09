@@ -1,0 +1,57 @@
+{% extends 'driverAssignment/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <h2>Route Database</h2>
+
+    <!-- Search and Filter Form -->
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                {{ form|crispy }}
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary mt-4">Search & Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Create New Delivery Link -->
+    <a href="{% url 'driverAssignment:add_route' %}" class="btn btn-primary mb-3">Create New Route</a>
+
+
+<table class="table">
+    <thead class="thead-dark">
+        <tr>
+            <th>Created At</th>
+            <th>Route Name</th>
+            <th>Start</th>
+            <th>Finish</th>
+            <th>Route Details</th>
+            <th>Edit Route</th>
+            <th>Delete Route</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for route_var in route_data %}
+        <tr>
+            <td>{{ route_var.created_at }}</td>
+            <td>{{ route_var.route_name }}</td>
+            <td>{{ route_var.start }}</td>
+            <td>{{ route_var.finish }}</td>
+            <td>
+                <a href="{% url 'driverAssignment:route_details' route_var.id %}">Details</a>
+            </td>
+            <td>
+                <a href="{% url 'driverAssignment:update_route' route_var.id %}">Edit</a>
+            </td>
+            <td>
+                <a href="{% url 'driverAssignment:delete_route' route_var.id %}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

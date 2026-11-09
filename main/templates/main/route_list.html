@@ -1,0 +1,747 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Route Management{% endblock %}
+
+{% block content %}
+<style>
+    /* Enhanced Route Management Styling */
+    .route-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .route-header h2 {
+        color: #1e293b;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .route-header-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.accent-blue {
+        border-left: 4px solid #2563eb;
+    }
+
+    .stat-card.accent-green {
+        border-left: 4px solid #10b981;
+    }
+
+    .stat-card.accent-purple {
+        border-left: 4px solid #8b5cf6;
+    }
+
+    .stat-card.accent-orange {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .stat-label {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin: 0.25rem 0 0 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .route-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .route-card-header {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .route-card-title {
+        color: #1e293b;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .route-filters {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        background: #ffffff;
+        border: 2px solid #e2e8f0;
+        color: #64748b;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+        border-color: #2563eb;
+        color: #2563eb;
+        background: #f1f5f9;
+        text-decoration: none;
+    }
+
+    .route-table-container {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .route-table {
+        margin: 0;
+        border: none;
+    }
+
+    .route-table thead th {
+        background: #f8fafc;
+        border: none;
+        border-bottom: 2px solid #e2e8f0;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1.5rem;
+    }
+
+    .route-table tbody td {
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 1.25rem 1.5rem;
+        vertical-align: middle;
+    }
+
+    /* Status column specific alignment */
+    .route-table tbody td:nth-child(5) {
+        text-align: center;
+    }
+
+    .route-table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .route-table tbody tr:hover {
+        background: #f8fafc;
+        transform: scale(1.001);
+    }
+
+    .route-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 1rem;
+    }
+
+    .route-location {
+        color: #64748b;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        line-height: 1.4;
+    }
+
+    .route-location i {
+        width: 16px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .route-arrow {
+        color: #94a3b8;
+        font-size: 0.75rem;
+    }
+
+    .route-rate {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 1rem;
+    }
+
+    .route-revenue {
+        font-weight: 600;
+        color: #059669;
+        font-size: 1rem;
+    }
+
+    .variance-positive {
+        color: #059669;
+        background: #ecfdf5;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .variance-negative {
+        color: #dc2626;
+        background: #fef2f2;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        white-space: nowrap;
+    }
+
+    .status-active {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .status-inactive {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        color: #475569;
+        border: 1px solid #cbd5e1;
+    }
+
+    .vehicle-badge {
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        color: #1e40af;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+
+    .vehicle-badge i {
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .vehicle-badge:hover {
+        background: linear-gradient(135deg, #bfdbfe, #93c5fd);
+        text-decoration: none;
+        color: #1e40af;
+        transform: translateY(-1px);
+    }
+
+    .no-vehicles {
+        color: #94a3b8;
+        font-size: 0.875rem;
+        font-style: italic;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .no-vehicles i {
+        flex-shrink: 0;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        border: 2px solid transparent;
+    }
+
+    .action-btn.btn-info {
+        background: #f0f9ff;
+        color: #0ea5e9;
+        border-color: #e0f2fe;
+    }
+
+    .action-btn.btn-info:hover {
+        background: #0ea5e9;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+
+    .action-btn.btn-warning {
+        background: #fffbeb;
+        color: #d97706;
+        border-color: #fed7aa;
+    }
+
+    .action-btn.btn-warning:hover {
+        background: #d97706;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+    }
+
+    .action-btn.btn-success {
+        background: #f0fdf4;
+        color: #16a34a;
+        border-color: #bbf7d0;
+    }
+
+    .action-btn.btn-success:hover {
+        background: #16a34a;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+    }
+
+    .action-btn.btn-primary {
+        background: #eff6ff;
+        color: #2563eb;
+        border-color: #dbeafe;
+    }
+
+    .action-btn.btn-primary:hover {
+        background: #2563eb;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .action-btn.btn-danger {
+        background: #fef2f2;
+        color: #dc2626;
+        border-color: #fecaca;
+    }
+
+    .action-btn.btn-danger:hover {
+        background: #dc2626;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: linear-gradient(135deg, #f8fafc, #ffffff);
+        border-radius: 16px;
+        border: 2px dashed #cbd5e1;
+        margin: 2rem 0;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #cbd5e1;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state-title {
+        color: #475569;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state-text {
+        color: #64748b;
+        margin-bottom: 2rem;
+    }
+
+    .assign-btn {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        transition: all 0.3s ease;
+        border: none;
+        white-space: nowrap;
+    }
+
+    .assign-btn i {
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .assign-btn:hover {
+        background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .add-route-btn {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
+        padding: 0.875rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        border: none;
+    }
+
+    .add-route-btn:hover {
+        background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+    }
+
+    .route-date {
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+        .route-header {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .route-header h2 {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .route-card-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .route-filters {
+            justify-content: center;
+        }
+
+        .action-buttons {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .route-table-container {
+            overflow-x: auto;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Route Management Header -->
+    <div class="route-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <h2>
+                <div class="route-header-icon">
+                    <i class="bi bi-signpost-2"></i>
+                </div>
+                Route Management
+            </h2>
+            <a href="{% url 'main:route_add' %}" class="add-route-btn">
+                <i class="bi bi-plus-circle"></i>
+                Add New Route
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style="border-radius: 12px; border: none; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Statistics Grid -->
+    {% if routes_data %}
+        <div class="stats-grid">
+            <div class="stat-card accent-blue">
+                <div class="stat-value">{{ routes_data|length }}</div>
+                <div class="stat-label">Total Routes</div>
+            </div>
+            <div class="stat-card accent-green">
+                <div class="stat-value">
+                    {{ active_routes_count|default:0 }}
+                </div>
+                <div class="stat-label">Active Routes</div>
+            </div>
+            <div class="stat-card accent-purple">
+                <div class="stat-value">
+                    {{ inactive_routes_count|default:0 }}
+                </div>
+                <div class="stat-label">Inactive Routes</div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Routes Card -->
+    <div class="route-card">
+        <div class="route-card-header">
+            <h5 class="route-card-title">
+                <i class="bi bi-map me-2"></i>
+                All Routes
+            </h5>
+            <div class="route-filters">
+                <button class="filter-btn active" onclick="filterRoutes('all')">
+                    <i class="bi bi-list-ul me-1"></i>All Routes
+                </button>
+                <button class="filter-btn" onclick="filterRoutes('active')">
+                    <i class="bi bi-check-circle me-1"></i>Active Only
+                </button>
+                <button class="filter-btn" onclick="filterRoutes('inactive')">
+                    <i class="bi bi-pause-circle me-1"></i>Inactive Only
+                </button>
+            </div>
+        </div>
+
+        <div class="route-table-container">
+            {% if routes_data %}
+                <div class="table-responsive">
+                    <table class="table route-table">
+                        <thead>
+                            <tr>
+                                <th>Route Details</th>
+                                <th>Locations</th>
+                                <th>Financial Data</th>
+                                <th>Performance</th>
+                                <th>Status</th>
+                                <th>Vehicles</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in routes_data %}
+                            <tr class="route-row" data-status="{% if data.route.is_active %}active{% else %}inactive{% endif %}">
+                                <td>
+                                    <div class="route-name">{{ data.route.route_name }}</div>
+                                    <div class="route-location">
+                                        <i class="bi bi-geo-alt text-muted"></i>
+                                        Route ID: #{{ data.route.id }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="route-location">
+                                        <i class="bi bi-pin"></i>
+                                        {{ data.route.start }}
+                                        <span class="route-arrow">
+                                            <i class="bi bi-arrow-right"></i>
+                                        </span>
+                                        {{ data.route.finish }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="route-rate">R{{ data.route.transport_rate|floatformat:2 }}/ton</div>
+                                    <div class="route-revenue">R{{ data.route.planned_revenue|floatformat:2 }}</div>
+                                </td>
+                                <td>
+                                    {% with variance=data.route.get_variance_per_load %}
+                                        <span class="{% if variance >= 0 %}variance-positive{% else %}variance-negative{% endif %}">
+                                            {% if variance >= 0 %}+{% endif %}R{{ variance|floatformat:2 }}
+                                        </span>
+                                    {% endwith %}
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-center">
+                                        {% if data.route.is_active %}
+                                            <span class="status-badge status-active">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Active</span>
+                                            </span>
+                                        {% else %}
+                                            <span class="status-badge status-inactive">
+                                                <i class="bi bi-pause-circle"></i>
+                                                <span>Inactive</span>
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if data.assigned_vehicles_count > 0 %}
+                                        <a href="{% url 'main:route_vehicle_assignments' data.route.id %}"
+                                           class="vehicle-badge">
+                                            <i class="bi bi-truck"></i>
+                                            {{ data.assigned_vehicles_count }} vehicle{{ data.assigned_vehicles_count|pluralize }}
+                                        </a>
+                                    {% else %}
+                                        <div class="no-vehicles">
+                                            <i class="bi bi-truck"></i> No vehicles assigned
+                                        </div>
+                                        <a href="{% url 'driverAssignment:complete_assignment' %}" class="assign-btn">
+                                            <i class="bi bi-plus"></i>Assign Vehicle
+                                        </a>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="route-date">{{ data.route.created_at|date:"M d, Y" }}</div>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="{% url 'main:route_vehicle_assignments' data.route.id %}"
+                                           class="action-btn btn-info"
+                                           title="Manage Vehicle Assignments">
+                                            <i class="bi bi-truck"></i>
+                                        </a>
+                                        <a href="{% url 'main:route_edit' data.route.id %}"
+                                           class="action-btn btn-primary"
+                                           title="Edit Route">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'main:route_toggle' data.route.id %}"
+                                           class="action-btn btn-{% if data.route.is_active %}warning{% else %}success{% endif %}"
+                                           title="{% if data.route.is_active %}Deactivate{% else %}Activate{% endif %} Route">
+                                            <i class="bi bi-{% if data.route.is_active %}pause{% else %}play{% endif %}"></i>
+                                        </a>
+                                        <a href="{% url 'main:route_delete' data.route.id %}"
+                                           class="action-btn btn-danger"
+                                           title="Delete Route">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-signpost-2"></i>
+                    </div>
+                    <h3 class="empty-state-title">No Routes Found</h3>
+                    <p class="empty-state-text">
+                        Get started by creating your first route to begin managing your fleet operations.
+                    </p>
+                    <a href="{% url 'main:route_add' %}" class="add-route-btn">
+                        <i class="bi bi-plus-circle"></i>
+                        Create First Route
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Route filtering functionality
+    function filterRoutes(filter) {
+        const rows = document.querySelectorAll('.route-row');
+        const buttons = document.querySelectorAll('.filter-btn');
+
+        // Update button states
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        // Filter rows
+        rows.forEach(row => {
+            const status = row.dataset.status;
+            if (filter === 'all' || status === filter) {
+                row.style.display = '';
+                row.style.animation = 'fadeIn 0.3s ease-in';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // Add fade in animation
+    document.addEventListener('DOMContentLoaded', function() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %}

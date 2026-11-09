@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Tracker · {{ vehicle.vehicle_registration_no }}</title>
+<style>
+:root { --bg:#f8fafc; --card:#fff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0; --ok:#10b981; --warn:#f59e0b; --bad:#ef4444; --primary:#2563eb; }
+@media (prefers-color-scheme: dark) { :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --border:#334155; } }
+* { box-sizing: border-box; }
+body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+main { max-width: 440px; margin: 0 auto; padding: 24px 16px; }
+h1 { font-size: 1.4rem; margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 0 0 20px; font-size: .9rem; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
+.state { display:flex; align-items:center; gap:10px; font-weight:600; }
+.dot { width:12px; height:12px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+.dot.ok { background:var(--ok); } .dot.warn { background:var(--warn); } .dot.bad { background:var(--bad); }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+.grid div span { display:block; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+.grid div b { font-variant-numeric: tabular-nums; }
+button { width:100%; border:0; border-radius:12px; padding:14px; font-size:1rem; font-weight:600; color:#fff; background:var(--primary); cursor:pointer; }
+button.stop { background:var(--bad); }
+button:disabled { opacity:.45; cursor:not-allowed; }
+.hint { font-size:.8rem; color:var(--muted); line-height:1.45; }
+button.secondary { background:transparent; color:var(--primary); border:1px solid var(--primary); margin-top:10px; }
+.row { display:flex; gap:8px; align-items:center; margin-top:10px; font-size:.85rem; color:var(--muted); }
+.row select { flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); }
+.log { font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap; word-break:break-all;
+       background:#0f172a; color:#cbd5e1; border-radius:10px; padding:10px; max-height:220px; overflow:auto; margin:8px 0 0; }
+.log .ok { color:#34d399; } .log .err { color:#f87171; }
+.label { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+    <h1>{{ vehicle.vehicle_registration_no }}</h1>
+    <p class="sub">{{ vehicle.vehicle_make }} · phone GPS tracker</p>
+
+    <div class="card">
+        <div class="state"><span class="dot" id="dot"></span><span id="state">Not tracking</span></div>
+        <div class="grid">
+            <div><span>Last fix</span><b id="fix">—</b></div>
+            <div><span>Accuracy</span><b id="acc">—</b></div>
+            <div><span>Sent</span><b id="sent">0</b></div>
+            <div><span>Queued</span><b id="queued">0</b></div>
+        </div>
+    </div>
+
+    <button type="button" id="toggle">Start tracking (phone GPS)</button>
+    <button type="button" id="simToggle" class="secondary">Simulate a drive: {{ sim_route.start_name }} → {{ sim_route.finish_name }}</button>
+    <div class="row">
+        <label for="simSpeed">Sim speed</label>
+        <select id="simSpeed">
+            <option value="1">Real time</option>
+            <option value="10">10×</option>
+            <option value="30" selected>30×</option>
+            <option value="120">120×</option>
+        </select>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+        <div class="label">What the unit sends to the server</div>
+        <pre class="log" id="log">Nothing sent yet.</pre>
+    </div>
+
+    <p class="hint" style="margin-top:16px">
+        <b>Phone GPS</b>: keep this page open in the truck. Fixes are queued if signal drops and sent
+        when the connection returns. Location access needs HTTPS (or localhost).<br>
+        <b>Simulate a drive</b>: generates realistic GPS fixes along the road and sends them through the
+        same API, so you can watch the truck move on the Live Map without leaving your desk.
+    </p>
+</main>
+{{ sim_route|json_script:"sim-route" }}
+<script>
+(function () {
+    'use strict';
+    var INGEST_URL = '{{ ingest_url|escapejs }}';
+    var TOKEN = '{{ token|escapejs }}';
+    var SEND_EVERY_MS = 5000;       // phone mode: batch fixes every 5 s
+    var SIM_SEND_EVERY_MS = 2000;   // sim mode: send faster so the demo feels live
+    var SIM_ROUTE = JSON.parse(document.getElementById('sim-route').textContent);
+    var MIN_FIX_GAP_MS = 2000;      // throttle very chatty GPS
+    var MAX_QUEUE = 2000;
+    var MAX_BATCH = 500;
+
+    var queue = [], sent = 0, watchId = null, sendTimer = null, sending = false, lastFixAt = 0, wakeLock = null;
+    var sim = null;                 // active simulation state, or null
+    var $ = function (id) { return document.getElementById(id); };
+
+    function setState(text, cls) { $('state').textContent = text; $('dot').className = 'dot ' + (cls || ''); }
+    function paint() { $('sent').textContent = sent; $('queued').textContent = queue.length; }
+
+    function onFix(pos) {
+        var now = Date.now();
+        if (now - lastFixAt < MIN_FIX_GAP_MS) return;
+        lastFixAt = now;
+        var c = pos.coords;
+        queue.push({
+            lat: c.latitude,
+            lng: c.longitude,
+            // Browser speed is m/s and often null; the server derives it when missing.
+            speed_kmh: c.speed != null && c.speed >= 0 ? c.speed * 3.6 : null,
+            heading: c.heading != null && !isNaN(c.heading) ? c.heading : null,
+            accuracy_m: c.accuracy,
+            recorded_at: pos.timestamp
+        });
+        if (queue.length > MAX_QUEUE) queue.splice(0, queue.length - MAX_QUEUE);
+        showFix(pos.timestamp, c.accuracy);
+    }
+
+    function showFix(ts, acc) {
+        $('fix').textContent = new Date(ts).toLocaleTimeString();
+        $('acc').textContent = '±' + Math.round(acc) + ' m';
+        paint();
+    }
+
+    function logRequest(batch, status) {
+        var ok = status >= 200 && status < 300;
+        var body = JSON.stringify({ points: batch.length > 2 ? batch.slice(-2) : batch }, function (k, v) {
+            return typeof v === 'number' && k !== 'recorded_at' ? Math.round(v * 1e5) / 1e5 : v;
+        }, 2);
+        $('log').innerHTML =
+            'POST ' + INGEST_URL + '\nAuthorization: Bearer ' + TOKEN.slice(0, 6) + '…\n\n' +
+            body.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }) +
+            (batch.length > 2 ? '\n(+' + (batch.length - 2) + ' more points in this batch)' : '') +
+            '\n\n<span class="' + (ok ? 'ok' : 'err') + '">← ' + (status || 'network error') + (ok ? ' Created' : '') + '</span>';
+    }
+
+    function onGeoError(err) {
+        var msg = { 1: 'Location permission denied', 2: 'Position unavailable', 3: 'GPS timeout' }[err.code] || 'GPS error';
+        setState(msg, err.code === 1 ? 'bad' : 'warn');
+        if (err.code === 1) stop();
+    }
+
+    function flush() {
+        if (sending || !queue.length) return;
+        sending = true;
+        var batch = queue.slice(0, MAX_BATCH);
+        fetch(INGEST_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+            body: JSON.stringify({ points: batch }),
+            keepalive: true
+        })
+            .then(function (r) {
+                logRequest(batch, r.status);
+                if (r.status === 401 || r.status === 403) { setState('Tracker link revoked', 'bad'); stop(); return; }
+                if (r.status === 400) { queue.splice(0, batch.length); throw new Error('rejected'); } // drop bad data
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                queue.splice(0, batch.length);
+                sent += batch.length;
+                if (!sim) setState('Tracking · live', 'ok');  // sim mode shows its own progress
+            })
+            .catch(function () { if (watchId !== null || sim) setState('Offline, queuing fixes', 'warn'); })
+            .finally(function () { sending = false; paint(); });
+    }
+
+    function requestWakeLock() {
+        if (!('wakeLock' in navigator)) return;
+        navigator.wakeLock.request('screen').then(function (l) { wakeLock = l; }).catch(function () {});
+    }
+
+    function start() {
+        if (sim) stopSim();
+        if (!('geolocation' in navigator)) { setState('Geolocation not supported', 'bad'); return; }
+        setState('Waiting for GPS…', 'warn');
+        watchId = navigator.geolocation.watchPosition(onFix, onGeoError,
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+        sendTimer = setInterval(flush, SEND_EVERY_MS);
+        requestWakeLock();
+        $('toggle').textContent = 'Stop tracking';
+        $('toggle').className = 'stop';
+        $('simToggle').disabled = true;
+    }
+
+    function stop() {
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        clearInterval(sendTimer);
+        flush();
+        if (wakeLock) { wakeLock.release(); wakeLock = null; }
+        $('toggle').textContent = 'Start tracking (phone GPS)';
+        $('toggle').className = '';
+        $('simToggle').disabled = false;
+        if ($('dot').className.indexOf('bad') === -1) setState('Not tracking');
+    }
+
+    // ---------- simulated drive ----------
+    function toRad(d) { return d * Math.PI / 180; }
+    function haversine(a, b) {
+        var dLat = toRad(b[0] - a[0]), dLng = toRad(b[1] - a[1]);
+        var x = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.pow(Math.sin(dLng / 2), 2);
+        return 12742 * Math.asin(Math.sqrt(x));
+    }
+    function bearing(a, b) {
+        var y = Math.sin(toRad(b[1] - a[1])) * Math.cos(toRad(b[0]));
+        var x = Math.cos(toRad(a[0])) * Math.sin(toRad(b[0])) - Math.sin(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.cos(toRad(b[1] - a[1]));
+        return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    }
+    function roadPath(a, b) {
+        return fetch('https://router.project-osrm.org/route/v1/driving/' + a[1] + ',' + a[0] + ';' + b[1] + ',' + b[0] + '?overview=full&geometries=geojson')
+            .then(function (r) { return r.json(); })
+            .then(function (d) { return d.routes[0].geometry.coordinates.map(function (c) { return [c[1], c[0]]; }); })
+            .catch(function () { return [a, b]; });   // straight line if routing is unreachable
+    }
+    function pointAt(d) {
+        d = Math.max(0, Math.min(sim.km, d));
+        var cum = sim.cum, lo = 0, hi = cum.length - 1;
+        while (lo < hi - 1) { var mid = (lo + hi) >> 1; if (cum[mid] <= d) lo = mid; else hi = mid; }
+        var t = (d - cum[lo]) / ((cum[hi] - cum[lo]) || 1), a = sim.path[lo], b = sim.path[hi];
+        return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    }
+
+    // One "GPS fix" per second of real time, advanced by the chosen speed-up.
+    function simTick() {
+        var speedup = parseFloat($('simSpeed').value) || 1, dtH = speedup / 3600, now = Date.now();
+        var speed = 0;
+        if (sim.dwell > 0) {
+            sim.dwell -= speedup;                                  // loading / offloading
+            setState('Simulating · ' + (sim.dir > 0 ? 'loading at ' + SIM_ROUTE.start_name : 'offloading at ' + SIM_ROUTE.finish_name), 'ok');
+        } else {
+            var edge = Math.min(sim.dist, sim.km - sim.dist);
+            speed = Math.max(8, (sim.cruise + 6 * Math.sin(now / 9000)) * Math.min(1, 0.3 + edge / 3));
+            sim.dist += sim.dir * speed * dtH;
+            if (sim.dist >= sim.km || sim.dist <= 0) {             // arrived: turn around after a stop
+                sim.dist = Math.max(0, Math.min(sim.km, sim.dist));
+                sim.dir *= -1;
+                sim.dwell = 20 * 60;
+                speed = 0;
+            }
+            setState('Simulating · ' + Math.round(sim.dir > 0 ? sim.km - sim.dist : sim.dist) + ' km to ' +
+                     (sim.dir > 0 ? SIM_ROUTE.finish_name : SIM_ROUTE.start_name), 'ok');
+        }
+        var p = pointAt(sim.dist), acc = 4 + Math.random() * 8;
+        // Add realistic GPS noise (a few metres).
+        var jitter = acc / 111000 * 0.5;
+        queue.push({
+            lat: p[0] + (Math.random() - 0.5) * jitter,
+            lng: p[1] + (Math.random() - 0.5) * jitter,
+            speed_kmh: Math.round(speed * 10) / 10,
+            heading: speed ? Math.round(bearing(p, pointAt(sim.dist + sim.dir * 0.3))) : null,
+            accuracy_m: Math.round(acc * 10) / 10,
+            recorded_at: now
+        });
+        if (queue.length > MAX_QUEUE) queue.splice(0, queue.length - MAX_QUEUE);
+        showFix(now, acc);
+    }
+
+    function startSim() {
+        if (watchId !== null) stop();
+        $('simToggle').disabled = true;
+        setState('Plotting route…', 'warn');
+        roadPath(SIM_ROUTE.start, SIM_ROUTE.finish).then(function (path) {
+            var cum = [0];
+            for (var i = 1; i < path.length; i++) cum.push(cum[i - 1] + haversine(path[i - 1], path[i]));
+            sim = { path: path, cum: cum, km: cum[cum.length - 1] || 0.001, dir: 1, dwell: 0,
+                    cruise: 78 + Math.random() * 10 };
+            sim.dist = sim.km * 0.05;                              // just left the depot
+            sim.timer = setInterval(simTick, 1000);
+            sendTimer = setInterval(flush, SIM_SEND_EVERY_MS);
+            simTick();
+            flush();
+            $('simToggle').disabled = false;
+            $('simToggle').textContent = 'Stop simulation';
+            $('simToggle').className = 'stop';
+            $('toggle').disabled = true;
+        });
+    }
+
+    function stopSim() {
+        if (!sim) return;
+        clearInterval(sim.timer);
+        clearInterval(sendTimer);
+        sim = null;
+        flush();
+        $('simToggle').textContent = 'Simulate a drive: ' + SIM_ROUTE.start_name + ' → ' + SIM_ROUTE.finish_name;
+        $('simToggle').className = 'secondary';
+        $('toggle').disabled = false;
+        setState('Not tracking');
+    }
+
+    $('simToggle').addEventListener('click', function () { sim ? stopSim() : startSim(); });
+
+    // Demo shortcut: open the link with ?simulate=1 (optionally &speed=120) to start driving at once.
+    var params = new URLSearchParams(location.search);
+    if (params.get('speed')) $('simSpeed').value = params.get('speed');
+    if (params.get('simulate') === '1') startSim();
+
+    $('toggle').addEventListener('click', function () { watchId === null ? start() : stop(); });
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && watchId !== null) requestWakeLock(); // wake locks drop when hidden
+    });
+    window.addEventListener('online', flush);
+})();
+</script>
+</body>
+</html>

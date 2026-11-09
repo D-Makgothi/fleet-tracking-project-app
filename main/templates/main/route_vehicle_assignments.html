@@ -1,0 +1,304 @@
+{% extends 'main/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Route Information Header -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-signpost-2 me-2"></i>{{ route.route_name }}
+                </h4>
+                <div>
+                    <a href="{% url 'main:route_list' %}" class="btn btn-outline-light">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Routes
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Route Details</h6>
+                    <table class="table table-borderless table-sm">
+                        <tr>
+                            <td><strong>Start Location:</strong></td>
+                            <td>{{ route.start }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>End Location:</strong></td>
+                            <td>{{ route.finish }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Transport Rate:</strong></td>
+                            <td>R{{ route.transport_rate }} per ton</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-primary">Status & Statistics</h6>
+                    <table class="table table-borderless table-sm">
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td>
+                                {% if route.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Created:</strong></td>
+                            <td>{{ route.created_at|date:"M d, Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Assigned Vehicles:</strong></td>
+                            <td>
+                                <span class="badge bg-info">{{ assignment_data|length }} vehicle{{ assignment_data|length|pluralize }}</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Assignments Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-truck me-2"></i>Assigned Vehicles ({{ assignment_data|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if assignment_data %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Assigned Driver</th>
+                                <th>Assignment Date</th>
+                                <th>FleetCam</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in assignment_data %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'main:vehicle_detail' data.vehicle.id %}" class="text-decoration-none">
+                                            <strong>{{ data.vehicle.vehicle_registration_no }}</strong>
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">{{ data.vehicle.vehicle_make }}</small>
+                                        {% if data.vehicle.is_active %}
+                                            <br><span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <br><span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if data.driver %}
+                                            <a href="{% url 'driverAssignment:driver_detail' data.driver.id %}" class="text-decoration-none">
+                                                <i class="bi bi-person me-1"></i>{{ data.driver.user.username }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">{{ data.driver.user.first_name }} {{ data.driver.user.last_name }}</small>
+                                            {% if data.driver.mine %}
+                                                <br><small class="text-muted">Mine: {{ data.driver.mine }}</small>
+                                            {% endif %}
+                                            {% if data.has_complete_assignment %}
+                                                <br><span class="badge bg-success">Complete Assignment</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-warning">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>No driver assigned
+                                            </span>
+                                            <br>
+                                            <a href="{% url 'driverAssignment:assign_driver_vehicle' %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-plus me-1"></i>Assign Driver
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ data.assignment.assigned_date|date:"M d, Y H:i" }}
+                                        <br>
+                                        <small class="text-muted">{{ data.assignment.assigned_date|timesince }} ago</small>
+                                    </td>
+                                    <td>
+                                        {% if data.vehicle.fleetcam_link %}
+                                            <a href="{% url 'main:vehicle_fleetcam' data.vehicle.id %}" 
+                                               class="btn btn-sm btn-info">
+                                                <i class="bi bi-camera-video me-1"></i>Monitor
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">Not configured</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if data.assignment.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                        {% if data.assignment.notes %}
+                                            <br>
+                                            <small class="text-muted" title="{{ data.assignment.notes }}">
+                                                <i class="bi bi-note me-1"></i>Has notes
+                                            </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            {% if data.assignment.is_active %}
+                                                <form method="post" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="remove">
+                                                    <input type="hidden" name="vehicle_id" value="{{ data.vehicle.id }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                            title="Remove Assignment" 
+                                                            onclick="return confirm('Remove this vehicle from the route?')">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            <a href="{% url 'main:vehicle_detail' data.vehicle.id %}" 
+                                               class="btn btn-sm btn-outline-primary" title="View Vehicle">
+                                                <i class="bi bi-truck"></i>
+                                            </a>
+                                            {% if data.driver %}
+                                                <a href="{% url 'driverAssignment:driver_detail' data.driver.id %}" 
+                                                   class="btn btn-sm btn-outline-info" title="View Driver">
+                                                    <i class="bi bi-person"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if data.vehicle.fleetcam_link %}
+                                                <a href="{% url 'main:vehicle_fleetcam' data.vehicle.id %}" 
+                                                   class="btn btn-sm btn-outline-success" title="Monitor Vehicle">
+                                                    <i class="bi bi-camera-video"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-truck fs-1 text-muted"></i>
+                    <h5 class="text-muted mt-3">No Vehicles Assigned</h5>
+                    <p class="text-muted">This route doesn't have any vehicles assigned yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Available Vehicles for Assignment -->
+    {% if available_data %}
+    <div class="card mt-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-plus-circle me-2"></i>Available Vehicles ({{ available_data|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Vehicle</th>
+                            <th>Current Driver</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in available_data %}
+                        <tr>
+                            <td>
+                                <strong>{{ data.vehicle.vehicle_registration_no }}</strong>
+                                <br>
+                                <small class="text-muted">{{ data.vehicle.vehicle_make }}</small>
+                            </td>
+                            <td>
+                                {% if data.driver %}
+                                    <i class="bi bi-person me-1 text-success"></i>{{ data.driver.user.username }}
+                                    <br>
+                                    <small class="text-muted">{{ data.driver.user.first_name }} {{ data.driver.user.last_name }}</small>
+                                    <br>
+                                    <span class="badge bg-success">Driver Assigned</span>
+                                {% else %}
+                                    <i class="bi bi-exclamation-triangle me-1 text-warning"></i>No driver
+                                    <br>
+                                    <span class="badge bg-warning text-dark">Needs Driver</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if data.vehicle.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="assign">
+                                    <input type="hidden" name="vehicle_id" value="{{ data.vehicle.id }}">
+                                    <button type="submit" class="btn btn-sm btn-primary" 
+                                            title="Assign to Route"
+                                            onclick="return confirm('Assign {{ data.vehicle.vehicle_registration_no }} to {{ route.route_name }}?')">
+                                        <i class="bi bi-plus"></i> Assign
+                                    </button>
+                                </form>
+                                <a href="{% url 'main:vehicle_detail' data.vehicle.id %}" 
+                                   class="btn btn-sm btn-outline-info ms-1" title="View Vehicle">
+                                    <i class="bi bi-info-circle"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card mt-4">
+        <div class="card-body text-center py-4">
+            <i class="bi bi-check-circle fs-1 text-success"></i>
+            <h5 class="text-success mt-3">All Vehicles Assigned</h5>
+            <p class="text-muted">All available vehicles are already assigned to this route.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .table th {
+        background-color: #343a40;
+        color: white;
+        border-color: #454d55;
+    }
+    
+    .btn-group .btn {
+        margin-right: 2px;
+    }
+    
+    .badge {
+        font-size: 0.8em;
+    }
+    
+    .table td {
+        border: none;
+        padding: 0.5rem 0;
+    }
+</style>
+{% endblock %}

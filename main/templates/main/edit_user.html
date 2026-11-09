@@ -1,0 +1,112 @@
+{% extends 'main/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ title }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <!-- User Information -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                                    {{ form.first_name }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                                    {{ form.last_name }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.email.id_for_label }}">Email</label>
+                            {{ form.email }}
+                        </div>
+                        
+                        <!-- Mine and FleetCam -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.mine.id_for_label }}">Mine</label>
+                                    {{ form.mine }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.fleetcam_link.id_for_label }}">FleetCam Link</label>
+                                    {{ form.fleetcam_link }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Driver License -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.driver_license_no.id_for_label }}">Driver License Number</label>
+                                    {{ form.driver_license_no }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.driver_license_expiry.id_for_label }}">Driver License Expiry</label>
+                                    {{ form.driver_license_expiry }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Induction License -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.induction_license_no.id_for_label }}">Induction License Number</label>
+                                    {{ form.induction_license_no }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.induction_license_expiry.id_for_label }}">Induction License Expiry</label>
+                                    {{ form.induction_license_expiry }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Vehicle Registration -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.vehicle_registration_no.id_for_label }}">Vehicle Registration Number</label>
+                                    {{ form.vehicle_registration_no }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.vehicle_registration_expiry.id_for_label }}">Vehicle Registration Expiry</label>
+                                    {{ form.vehicle_registration_expiry }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">Update User</button>
+                            <a href="{% url 'main:active_users' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

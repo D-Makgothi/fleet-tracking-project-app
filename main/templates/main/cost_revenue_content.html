@@ -1,0 +1,683 @@
+<!-- Cost & Revenue Analytics Content
+     Rendered standalone inside cost_revenue_analytics.html (full page) and injected via AJAX
+     into the Analytics dashboard "Cost & Revenue" tab. All classes are prefixed with `cr-`
+     so nothing here leaks into the host page. -->
+<style>
+.cr {
+    --cr-text: #1e293b;
+    --cr-muted: #64748b;
+    --cr-subtle: #94a3b8;
+    --cr-border: #e2e8f0;
+    --cr-surface: #ffffff;
+    --cr-surface-alt: #f8fafc;
+    --cr-primary: #2563eb;
+    --cr-violet: #7c3aed;
+    --cr-success: #10b981;
+    --cr-warning: #f59e0b;
+    --cr-danger: #ef4444;
+    --cr-info: #0ea5e9;
+    --cr-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: var(--cr-text);
+}
+
+/* ---------- Header ---------- */
+.cr-header {
+    background: var(--cr-surface);
+    border: 1px solid var(--cr-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.cr-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--cr-gradient);
+}
+.cr-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.cr-header-title { display: flex; align-items: center; gap: 1rem; }
+.cr-header-icon {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background: var(--cr-gradient);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+.cr-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.15rem 0;
+    color: var(--cr-text) !important;
+}
+.cr-header p { margin: 0; color: var(--cr-muted); }
+.cr-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.cr-actions .btn { border-radius: 8px; font-weight: 500; }
+
+/* ---------- KPI cards ---------- */
+.cr-kpi {
+    --cr-accent: var(--cr-primary);
+    background: var(--cr-surface);
+    border: 1px solid var(--cr-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    padding: 1.3rem 1.4rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: crFadeUp 0.5s ease both;
+}
+.cr-kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--cr-accent);
+}
+.cr-kpi:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12); }
+.cr-kpi.revenue { --cr-accent: var(--cr-success); }
+.cr-kpi.costs   { --cr-accent: var(--cr-danger); }
+.cr-kpi.profit  { --cr-accent: var(--cr-primary); }
+.cr-kpi.loss    { --cr-accent: var(--cr-danger); }
+.cr-kpi.margin  { --cr-accent: var(--cr-violet); }
+.cr-kpi-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+.cr-kpi-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--cr-muted);
+}
+.cr-kpi-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    color: var(--cr-accent);
+    background: color-mix(in srgb, var(--cr-accent) 12%, transparent);
+}
+.cr-kpi-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--cr-text);
+    font-variant-numeric: tabular-nums;
+    word-break: break-word;
+}
+.cr-kpi-value .cur { font-size: 1rem; font-weight: 600; color: var(--cr-muted); margin-right: 0.1rem; }
+.cr-kpi-sub { font-size: 0.78rem; color: var(--cr-subtle); margin-top: 0.35rem; }
+.cr-meter {
+    height: 6px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    overflow: hidden;
+    margin-top: 0.6rem;
+}
+.cr-meter > div { height: 100%; border-radius: 6px; background: var(--cr-gradient); }
+.cr-kpis > div:nth-child(2) .cr-kpi { animation-delay: 0.08s; }
+.cr-kpis > div:nth-child(3) .cr-kpi { animation-delay: 0.16s; }
+.cr-kpis > div:nth-child(4) .cr-kpi { animation-delay: 0.24s; }
+
+/* ---------- Panels ---------- */
+.cr-panel {
+    background: var(--cr-surface);
+    border: 1px solid var(--cr-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.cr-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--cr-border);
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+.cr-panel-head h5 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--cr-text) !important;
+}
+.cr-panel-head h5 i { color: var(--cr-primary); }
+.cr-panel-head small { font-size: 0.78rem; color: var(--cr-subtle); }
+.cr-panel-body { padding: 1.5rem; flex: 1; }
+.cr-chart-wrap { position: relative; height: 280px; }
+.cr-chart-wrap.pie { height: 230px; }
+
+/* Pie legend */
+.cr-pie-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: center;
+}
+.cr-breakdown { list-style: none; padding: 0; margin: 0; }
+.cr-breakdown li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.cr-breakdown li:last-child { border-bottom: none; }
+.cr-breakdown-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+.cr-breakdown-name { display: flex; align-items: center; gap: 0.5rem; color: var(--cr-muted); }
+.cr-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.cr-breakdown-pct { font-weight: 600; color: var(--cr-text); font-variant-numeric: tabular-nums; }
+.cr-breakdown-amt {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--cr-text);
+    margin-top: 0.15rem;
+    font-variant-numeric: tabular-nums;
+}
+.cr-breakdown-total {
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--cr-border);
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--cr-muted);
+}
+.cr-breakdown-total strong { color: var(--cr-text); font-variant-numeric: tabular-nums; }
+
+.cr-empty {
+    height: 100%;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--cr-muted);
+    font-size: 0.9rem;
+}
+.cr-empty i { font-size: 2rem; color: var(--cr-subtle); margin-bottom: 0.5rem; }
+.cr-empty small { color: var(--cr-subtle); margin-top: 0.25rem; }
+
+.cr-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    color: #b45309;
+    background: #fef3c7;
+}
+
+@keyframes crFadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .cr-kpi { animation: none; }
+    .cr-kpi:hover { transform: none; }
+}
+@media (max-width: 768px) {
+    .cr-header { padding: 1.25rem; }
+    .cr-header-top { flex-direction: column; align-items: flex-start; }
+    .cr-panel-body { padding: 1.1rem; }
+    .cr-chart-wrap { height: 240px; }
+    .cr-pie-layout { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="cr">
+    <!-- Header -->
+    <div class="cr-header">
+        <div class="cr-header-top">
+            <div class="cr-header-title">
+                <div class="cr-header-icon"><i class="bi bi-pie-chart"></i></div>
+                <div>
+                    <h2>Cost &amp; Revenue</h2>
+                    <p>Profitability across your fleet, drivers and routes</p>
+                </div>
+            </div>
+            <div class="cr-actions">
+                <a href="{% url 'main:bookkeeping' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-journal-text me-1"></i>Bookkeeping
+                </a>
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row g-3 mb-4 cr-kpis">
+        <div class="col-sm-6 col-xl-3">
+            <div class="cr-kpi revenue">
+                <div class="cr-kpi-head">
+                    <span class="cr-kpi-label">Total revenue</span>
+                    <span class="cr-kpi-icon"><i class="bi bi-graph-up-arrow"></i></span>
+                </div>
+                <div class="cr-kpi-value"><span class="cur">R</span>{{ total_revenue|floatformat:"2g" }}</div>
+                <div class="cr-kpi-sub">All revenue reports</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="cr-kpi costs">
+                <div class="cr-kpi-head">
+                    <span class="cr-kpi-label">Total costs</span>
+                    <span class="cr-kpi-icon"><i class="bi bi-receipt"></i></span>
+                </div>
+                <div class="cr-kpi-value"><span class="cur">R</span>{{ total_costs|floatformat:"2g" }}</div>
+                <div class="cr-kpi-sub">Fuel + imported costs</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="cr-kpi {% if total_profit >= 0 %}profit{% else %}loss{% endif %}">
+                <div class="cr-kpi-head">
+                    <span class="cr-kpi-label">{% if total_profit >= 0 %}Net profit{% else %}Net loss{% endif %}</span>
+                    <span class="cr-kpi-icon"><i class="bi {% if total_profit >= 0 %}bi-wallet2{% else %}bi-exclamation-triangle{% endif %}"></i></span>
+                </div>
+                <div class="cr-kpi-value"><span class="cur">R</span>{{ total_profit|floatformat:"2g" }}</div>
+                <div class="cr-kpi-sub">Revenue − costs</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="cr-kpi margin">
+                <div class="cr-kpi-head">
+                    <span class="cr-kpi-label">Profit margin</span>
+                    <span class="cr-kpi-icon"><i class="bi bi-percent"></i></span>
+                </div>
+                <div class="cr-kpi-value">{{ profit_margin|floatformat:1 }}%</div>
+                <div class="cr-meter" role="progressbar" aria-label="Profit margin" aria-valuenow="{{ profit_margin|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+                    <div style="width: {% if profit_margin > 0 %}{{ profit_margin|stringformat:'.1f' }}{% else %}0{% endif %}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost breakdown (pie) + daily trends -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-5">
+            <div class="cr-panel">
+                <div class="cr-panel-head">
+                    <h5><i class="bi bi-pie-chart"></i>Cost breakdown</h5>
+                </div>
+                <div class="cr-panel-body">
+                    {% if total_costs > 0 %}
+                    <div class="cr-pie-layout">
+                        <div class="cr-chart-wrap pie">
+                            <canvas id="costBreakdownChart" aria-label="Pie chart of fuel versus imported costs" role="img"></canvas>
+                        </div>
+                        <div>
+                            <ul class="cr-breakdown">
+                                <li>
+                                    <div class="cr-breakdown-top">
+                                        <span class="cr-breakdown-name"><span class="cr-swatch" style="background:#f59e0b"></span>Fuel costs</span>
+                                        <span class="cr-breakdown-pct" data-cr-pct="{{ total_fuel_cost|stringformat:'.2f' }}">—</span>
+                                    </div>
+                                    <div class="cr-breakdown-amt">R{{ total_fuel_cost|floatformat:"2g" }}</div>
+                                </li>
+                                <li>
+                                    <div class="cr-breakdown-top">
+                                        <span class="cr-breakdown-name"><span class="cr-swatch" style="background:#7c3aed"></span>Imported costs</span>
+                                        <span class="cr-breakdown-pct" data-cr-pct="{{ total_imported_costs|stringformat:'.2f' }}">—</span>
+                                    </div>
+                                    <div class="cr-breakdown-amt">R{{ total_imported_costs|floatformat:"2g" }}</div>
+                                </li>
+                            </ul>
+                            <div class="cr-breakdown-total">
+                                <span>Total</span>
+                                <strong>R{{ total_costs|floatformat:"2g" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="cr-empty">
+                        <i class="bi bi-pie-chart"></i>
+                        No costs recorded yet
+                        <small>Add daily cost reports to see the breakdown.</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-7">
+            <div class="cr-panel">
+                <div class="cr-panel-head">
+                    <h5><i class="bi bi-bar-chart"></i>Daily trend</h5>
+                    <small>Last 7 days</small>
+                </div>
+                <div class="cr-panel-body">
+                    <div class="cr-chart-wrap">
+                        <canvas id="dailyTrendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drivers -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="cr-panel">
+                <div class="cr-panel-head">
+                    <h5><i class="bi bi-people"></i>Revenue by driver</h5>
+                    <small>Highest first</small>
+                </div>
+                <div class="cr-panel-body">
+                    <div class="cr-chart-wrap">
+                        <canvas id="driverRevenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="cr-panel">
+                <div class="cr-panel-head">
+                    <h5><i class="bi bi-people"></i>Costs by driver</h5>
+                    <small>Highest first</small>
+                </div>
+                <div class="cr-panel-body">
+                    <div class="cr-chart-wrap">
+                        <canvas id="driverCostsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Routes -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="cr-panel">
+                <div class="cr-panel-head">
+                    <h5><i class="bi bi-signpost-2"></i>Route performance</h5>
+                    <span class="cr-tag" title="Calculated as each route's transport rate × 100 — not yet linked to actual trips"><i class="bi bi-info-circle"></i>Estimated</span>
+                </div>
+                <div class="cr-panel-body">
+                    <div class="cr-chart-wrap">
+                        <canvas id="routePerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var fuelCost = {{ total_fuel_cost|stringformat:".2f" }};
+    var importedCost = {{ total_imported_costs|stringformat:".2f" }};
+    var dailyTrends = {{ daily_trends_json|safe }} || [];
+    var driverCosts = {{ driver_costs_json|safe }} || {};
+    var driverRevenues = {{ driver_revenues_json|safe }} || {};
+    var routePerformance = {{ route_performance_json|safe }} || [];
+
+    var COLORS = {
+        revenue: '#10b981',
+        costs: '#ef4444',
+        profit: '#2563eb',
+        fuel: '#f59e0b',
+        imported: '#7c3aed',
+        route: '#7c3aed'
+    };
+
+    var full = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
+    function rand(v) { return (v < 0 ? '−R' : 'R') + full.format(Math.abs(v)); }
+    function randShort(v) { return (v < 0 ? '−R' : 'R') + compact.format(Math.abs(v)); }
+
+    function renderPercentages() {
+        var total = fuelCost + importedCost;
+        document.querySelectorAll('[data-cr-pct]').forEach(function (el) {
+            var v = parseFloat(el.getAttribute('data-cr-pct'));
+            el.textContent = total > 0 ? (v / total * 100).toFixed(1) + '%' : '—';
+        });
+    }
+
+    function emptyState(canvas, title, hint) {
+        canvas.parentElement.innerHTML =
+            '<div class="cr-empty"><i class="bi bi-bar-chart"></i>' + title +
+            (hint ? '<small>' + hint + '</small>' : '') + '</div>';
+    }
+
+    function destroyExisting(canvas) {
+        var existing = Chart.getChart ? Chart.getChart(canvas) : null;
+        if (existing) existing.destroy();
+    }
+
+    function tooltipBase() {
+        return {
+            backgroundColor: '#1e293b',
+            padding: 10,
+            cornerRadius: 8,
+            boxPadding: 4,
+            usePointStyle: true
+        };
+    }
+
+    function legendBase() {
+        return {
+            position: 'bottom',
+            labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 16, color: '#475569' }
+        };
+    }
+
+    function valueAxis(horizontal) {
+        return {
+            beginAtZero: true,
+            grace: '5%',
+            border: { display: false },
+            grid: { color: '#f1f5f9' },
+            ticks: { color: '#64748b', maxTicksLimit: 6, callback: function (v) { return randShort(v); } }
+        };
+    }
+
+    function categoryAxis() {
+        return {
+            border: { display: false },
+            grid: { display: false },
+            ticks: { color: '#1e293b', font: { weight: '600' } }
+        };
+    }
+
+    // ---- Cost breakdown pie ----
+    function renderCostPie() {
+        var canvas = document.getElementById('costBreakdownChart');
+        if (!canvas) return;
+        destroyExisting(canvas);
+        new Chart(canvas, {
+            type: 'pie',
+            data: {
+                labels: ['Fuel costs', 'Imported costs'],
+                datasets: [{
+                    data: [fuelCost, importedCost],
+                    backgroundColor: [COLORS.fuel, COLORS.imported],
+                    borderColor: '#ffffff',
+                    borderWidth: 3,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: 8 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: Object.assign(tooltipBase(), {
+                        callbacks: {
+                            label: function (ctx) {
+                                var total = fuelCost + importedCost;
+                                var pct = total > 0 ? (ctx.parsed / total * 100).toFixed(1) : 0;
+                                return ' ' + ctx.label + ': ' + rand(ctx.parsed) + ' (' + pct + '%)';
+                            }
+                        }
+                    })
+                }
+            }
+        });
+    }
+
+    // ---- Daily trend: revenue & cost bars with a profit line ----
+    function renderDailyTrends() {
+        var canvas = document.getElementById('dailyTrendsChart');
+        if (!canvas) return;
+        var hasData = dailyTrends.some(function (d) { return d.costs || d.revenue; });
+        if (!hasData) return emptyState(canvas, 'No reports in the last 7 days', 'Daily revenue and cost reports will appear here.');
+        destroyExisting(canvas);
+
+        new Chart(canvas, {
+            data: {
+                labels: dailyTrends.map(function (d) { return d.date; }),
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'Profit',
+                        data: dailyTrends.map(function (d) { return d.profit; }),
+                        borderColor: COLORS.profit,
+                        backgroundColor: COLORS.profit,
+                        borderWidth: 2.5,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderWidth: 2,
+                        order: 0
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Revenue',
+                        data: dailyTrends.map(function (d) { return d.revenue; }),
+                        backgroundColor: COLORS.revenue,
+                        borderRadius: 6,
+                        maxBarThickness: 28,
+                        order: 1
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Costs',
+                        data: dailyTrends.map(function (d) { return d.costs; }),
+                        backgroundColor: COLORS.costs,
+                        borderRadius: 6,
+                        maxBarThickness: 28,
+                        order: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: legendBase(),
+                    tooltip: Object.assign(tooltipBase(), {
+                        callbacks: { label: function (c) { return ' ' + c.dataset.label + ': ' + rand(c.parsed.y); } }
+                    })
+                },
+                scales: { y: valueAxis(), x: categoryAxis() }
+            }
+        });
+    }
+
+    // ---- Horizontal ranked bar (drivers / routes) ----
+    function renderRanked(canvasId, entries, color, label, emptyTitle, emptyHint) {
+        var canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        if (!entries.length) return emptyState(canvas, emptyTitle, emptyHint);
+        destroyExisting(canvas);
+
+        entries.sort(function (a, b) { return b.value - a.value; });
+        // Give each row a sensible height so few bars don't become huge blocks
+        canvas.parentElement.style.height = Math.max(200, entries.length * 44 + 60) + 'px';
+
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: entries.map(function (e) { return e.name; }),
+                datasets: [{
+                    label: label,
+                    data: entries.map(function (e) { return e.value; }),
+                    backgroundColor: color,
+                    borderRadius: 6,
+                    maxBarThickness: 26
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: Object.assign(tooltipBase(), {
+                        displayColors: false,
+                        callbacks: { label: function (c) { return label + ': ' + rand(c.parsed.x); } }
+                    })
+                },
+                scales: { x: valueAxis(true), y: categoryAxis() }
+            }
+        });
+    }
+
+    function toEntries(obj) {
+        return Object.keys(obj).map(function (k) { return { name: k, value: obj[k] }; });
+    }
+
+    function init() {
+        renderPercentages();
+        if (typeof Chart === 'undefined') return;
+        renderCostPie();
+        renderDailyTrends();
+        renderRanked('driverRevenueChart', toEntries(driverRevenues), COLORS.revenue, 'Revenue',
+            'No driver revenue yet', 'Revenue reports linked to drivers will appear here.');
+        renderRanked('driverCostsChart', toEntries(driverCosts), COLORS.costs, 'Costs',
+            'No driver costs yet', 'Cost reports linked to drivers will appear here.');
+        renderRanked('routePerformanceChart',
+            routePerformance.map(function (r) { return { name: r.name, value: r.revenue }; }),
+            COLORS.route, 'Est. revenue', 'No routes configured', 'Add routes to compare their performance.');
+    }
+
+    // On the full page this runs before base.html loads Chart.js, so wait for the DOM;
+    // when injected via AJAX the page is already loaded, so run immediately.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>

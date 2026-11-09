@@ -1,0 +1,454 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Hunting Log - {{ log.hunting_session_id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1">
+                            <li class="breadcrumb-item"><a href="{% url 'crm:dashboard' %}" class="text-decoration-none">CRM</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'crm:hunting_logs' %}" class="text-decoration-none">Hunting Logs</a></li>
+                            <li class="breadcrumb-item active">{{ log.hunting_session_id }}</li>
+                        </ol>
+                    </nav>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-robot text-primary me-2"></i>
+                        AI Hunting Session
+                        <span class="badge bg-{% if log.status == 'completed' %}success{% elif log.status == 'running' %}primary{% elif log.status == 'failed' %}danger{% else %}secondary{% endif %} ms-2">
+                            {{ log.get_status_display }}
+                        </span>
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Session ID: <code>{{ log.hunting_session_id }}</code> •
+                        Agent: <strong>{{ log.agent.full_name }}</strong>
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    {% if log.status == 'running' %}
+                    <a href="{% url 'crm:cancel_hunting_session' log.hunting_session_id %}" class="btn btn-danger"
+                       onclick="return confirm('Are you sure you want to cancel this hunting session?')">
+                        <i class="bi bi-stop-circle me-1"></i>Cancel Session
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'crm:agent_detail' log.agent.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-person-badge me-1"></i>View Agent
+                    </a>
+                    <a href="{% url 'crm:hunting_logs' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Back to Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Overview Cards -->
+    <div class="row mb-4">
+        <!-- Status and Performance -->
+        <div class="col-lg-8">
+            <div class="row g-3">
+                <!-- Session Status -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-gradient-primary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-info-circle me-2"></i>Session Status
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Current Status</label>
+                                <p class="mb-0">
+                                    <span class="badge bg-{% if log.status == 'completed' %}success{% elif log.status == 'running' %}primary{% elif log.status == 'failed' %}danger{% else %}secondary{% endif %} fs-6">
+                                        <i class="bi bi-{% if log.status == 'completed' %}check-circle{% elif log.status == 'running' %}play-circle{% elif log.status == 'failed' %}x-circle{% else %}pause-circle{% endif %} me-1"></i>
+                                        {{ log.get_status_display }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Start Time</label>
+                                <p class="mb-0">{{ log.start_time|date:"M d, Y g:i A" }}</p>
+                            </div>
+                            {% if log.end_time %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">End Time</label>
+                                <p class="mb-0">{{ log.end_time|date:"M d, Y g:i A" }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Duration</label>
+                                <p class="mb-0">
+                                    {% with duration=log.end_time|timeuntil:log.start_time %}
+                                        {{ duration }}
+                                    {% endwith %}
+                                </p>
+                            </div>
+                            {% else %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Running Time</label>
+                                <p class="mb-0 text-primary">
+                                    <i class="bi bi-clock me-1"></i>
+                                    Still running...
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hunt Configuration -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-gradient-info text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-gear me-2"></i>Hunt Configuration
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Target Region</label>
+                                <p class="mb-0">
+                                    <i class="bi bi-geo-alt me-1"></i>{{ log.target_region }}
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Max Results</label>
+                                <p class="mb-0">{{ log.max_results }} prospects</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Search Keywords</label>
+                                <div class="mt-1">
+                                    {% for keyword in log.search_keywords|linebreaks %}
+                                        {% if keyword.strip %}
+                                        <span class="badge bg-light text-dark me-1 mb-1">{{ keyword.strip }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header bg-gradient-success text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Performance Metrics
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 text-center">
+                        <div class="col-6">
+                            <div class="p-3 bg-primary bg-opacity-10 rounded">
+                                <div class="h4 mb-1 text-primary">{{ log.prospects_found }}</div>
+                                <small class="text-muted">Prospects Found</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-success bg-opacity-10 rounded">
+                                <div class="h4 mb-1 text-success">{{ log.valid_contacts }}</div>
+                                <small class="text-muted">Valid Contacts</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-warning bg-opacity-10 rounded">
+                                <div class="h4 mb-1 text-warning">{{ log.clients_created }}</div>
+                                <small class="text-muted">Clients Created</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-info bg-opacity-10 rounded">
+                                <div class="h4 mb-1 text-info">
+                                    {% if log.prospects_found > 0 %}
+                                        {{ log.valid_contacts|floatformat:0 }}{{ log.prospects_found|floatformat:0 }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">Success Rate</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="mb-2 d-flex justify-content-between">
+                            <span class="text-muted small">API Calls Made</span>
+                            <span class="fw-semibold">{{ log.api_calls_made }}</span>
+                        </div>
+                        <div class="mb-2 d-flex justify-content-between">
+                            <span class="text-muted small">API Quota Used</span>
+                            <span class="fw-semibold">${{ log.api_quota_used|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Information -->
+    <div class="row">
+        <!-- Agent Information -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-robot me-2"></i>AI Agent Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 3rem; height: 3rem;">
+                            <i class="bi bi-robot text-primary fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">{{ log.agent.full_name }}</h6>
+                            <small class="text-muted">{{ log.agent.email }}</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Agent ID</label>
+                                <p class="mb-0"><code>{{ log.agent.agent_id }}</code></p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Agent Status</label>
+                                <p class="mb-0">
+                                    <span class="badge bg-{{ log.agent.is_active|yesno:'success,secondary' }}">
+                                        {{ log.agent.is_active|yesno:"Active,Inactive" }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if log.agent.bio %}
+                    <div class="mt-3 pt-3 border-top">
+                        <label class="form-label text-muted small">Agent Description</label>
+                        <p class="mb-0 small">{{ log.agent.bio|truncatewords:30 }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-3">
+                        <a href="{% url 'crm:agent_detail' log.agent.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye me-1"></i>View Full Agent Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Log / Additional Details -->
+        <div class="col-lg-6">
+            {% if log.error_log %}
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Error Log
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">Session Errors</h6>
+                        <pre class="mb-0 small">{{ log.error_log }}</pre>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clipboard-data me-2"></i>Session Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="p-4 bg-light rounded text-center">
+                                {% if log.status == 'completed' %}
+                                    <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                                    <h5 class="text-success mt-2">Session Completed Successfully</h5>
+                                    <p class="text-muted mb-0">
+                                        Found {{ log.prospects_found }} prospects with {{ log.valid_contacts }} valid contacts.
+                                        {% if log.clients_created > 0 %}
+                                            Successfully created {{ log.clients_created }} new client{{ log.clients_created|pluralize }}.
+                                        {% endif %}
+                                    </p>
+                                {% elif log.status == 'running' %}
+                                    <i class="bi bi-clock text-primary" style="font-size: 3rem;"></i>
+                                    <h5 class="text-primary mt-2">Session In Progress</h5>
+                                    <p class="text-muted mb-0">
+                                        AI agent is actively hunting for prospects.
+                                        {{ log.prospects_found }} prospects found so far.
+                                    </p>
+                                {% elif log.status == 'failed' %}
+                                    <i class="bi bi-x-circle text-danger" style="font-size: 3rem;"></i>
+                                    <h5 class="text-danger mt-2">Session Failed</h5>
+                                    <p class="text-muted mb-0">
+                                        The hunting session encountered errors and could not complete.
+                                    </p>
+                                {% else %}
+                                    <i class="bi bi-pause-circle text-secondary" style="font-size: 3rem;"></i>
+                                    <h5 class="text-secondary mt-2">Session {{ log.get_status_display }}</h5>
+                                    <p class="text-muted mb-0">
+                                        The hunting session has been {{ log.status }}.
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if log.status == 'completed' and log.prospects_found > 0 %}
+                    <div class="mt-3">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'crm:prospect_approval_list' %}?session={{ log.hunting_session_id }}" class="btn btn-primary">
+                                <i class="bi bi-eye me-1"></i>Review Found Prospects
+                            </a>
+                            {% if log.clients_created > 0 %}
+                            <a href="{% url 'crm:clients' %}?agent={{ log.agent.id }}" class="btn btn-outline-success">
+                                <i class="bi bi-people me-1"></i>View Created Clients
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Session Timeline -->
+    {% if log.status != 'running' %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history me-2"></i>Session Timeline
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Session Started</h6>
+                                <p class="text-muted mb-1 small">{{ log.start_time|date:"M d, Y g:i A" }}</p>
+                                <p class="mb-0 small">AI agent {{ log.agent.full_name }} began hunting for prospects in {{ log.target_region }}.</p>
+                            </div>
+                        </div>
+
+                        {% if log.prospects_found > 0 %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Prospects Discovered</h6>
+                                <p class="mb-0 small">Found {{ log.prospects_found }} potential prospects during the hunt.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if log.valid_contacts > 0 %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Contacts Validated</h6>
+                                <p class="mb-0 small">{{ log.valid_contacts }} contacts were validated and prepared for review.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if log.end_time %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-{% if log.status == 'completed' %}success{% else %}danger{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Session {{ log.get_status_display }}</h6>
+                                <p class="text-muted mb-1 small">{{ log.end_time|date:"M d, Y g:i A" }}</p>
+                                <p class="mb-0 small">
+                                    {% if log.status == 'completed' %}
+                                        Hunt completed successfully. Made {{ log.api_calls_made }} API calls using ${{ log.api_quota_used|floatformat:2 }} of quota.
+                                    {% else %}
+                                        Session ended with status: {{ log.get_status_display }}.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 1rem;
+    width: 2px;
+    height: calc(100% - 1rem);
+    background: #dee2e6;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -1.75rem;
+    top: 0.25rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 3px solid var(--bs-primary);
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.avatar {
+    width: 3rem;
+    height: 3rem;
+}
+</style>
+{% endblock %}

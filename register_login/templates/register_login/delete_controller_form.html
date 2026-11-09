@@ -1,0 +1,56 @@
+{% extends 'register_login/base.html' %}
+
+{% block title %}Delete Controller{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Delete Controller
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5><i class="bi bi-warning me-2"></i>Confirmation Required</h5>
+                        <p>Are you sure you want to delete the following controller?</p>
+                    </div>
+                    
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6><strong>Controller Details:</strong></h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Username:</strong> {{ controller.user.username }}</li>
+                                <li><strong>Full Name:</strong> {{ controller.user.get_full_name|default:"Not provided" }}</li>
+                                <li><strong>Email:</strong> {{ controller.user.email|default:"Not provided" }}</li>
+                                <li><strong>Phone:</strong> {{ controller.phone_number|default:"Not provided" }}</li>
+                                <li><strong>Department:</strong> {{ controller.department|default:"Not provided" }}</li>
+                                <li><strong>Employee ID:</strong> {{ controller.employee_id|default:"Not provided" }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-danger mt-3">
+                        <strong>Warning:</strong> This action cannot be undone. The controller account and all associated data will be permanently removed.
+                    </div>
+                    
+                    <form method="post" class="mt-3">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'main:active_users' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i>Delete Controller
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

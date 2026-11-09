@@ -1,0 +1,643 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Drag & Drop Assignments{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="bi bi-cursor me-2"></i>Drag & Drop Assignment Management</h2>
+            <p class="text-muted">Drag drivers to vehicles, then drag vehicles to routes to create assignments</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Unassigned Drivers Column -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Available Drivers</h5>
+                    <small>{{ unassigned_drivers|length }} driver{{ unassigned_drivers|length|pluralize }}</small>
+                </div>
+                <div class="card-body drivers-container cards-container" id="drivers-container">
+                    {% for driver in unassigned_drivers %}
+                        <div class="driver-card draggable" 
+                             draggable="true" 
+                             data-driver-id="{{ driver.id }}"
+                             data-type="driver">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-circle text-primary me-2"></i>
+                                <div>
+                                    <strong>{{ driver.user.username }}</strong>
+                                    <br><small class="text-muted">{{ driver.user.first_name }} {{ driver.user.last_name }}</small>
+                                    {% if driver.mine %}
+                                        <br><small class="text-info">Mine: {{ driver.mine }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-person-x fs-2"></i>
+                            <p>No unassigned drivers</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicles Column -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Vehicle Assignments</h5>
+                    <small>{{ vehicles_data|length }} vehicle{{ vehicles_data|length|pluralize }}</small>
+                </div>
+                <div class="card-body vehicles-container cards-container" id="vehicles-container">
+                    {% for data in vehicles_data %}
+                        <div class="vehicle-card drop-zone draggable" 
+                             data-vehicle-id="{{ data.vehicle.id }}"
+                             data-type="vehicle"
+                             draggable="true">
+                            <div class="vehicle-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-truck text-warning me-2"></i>
+                                        <strong>{{ data.vehicle.vehicle_registration_no }}</strong>
+                                    </div>
+                                    <div>
+                                        {% if data.current_route %}
+                                            <span class="badge bg-success">On Route</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Available</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ data.vehicle.vehicle_make }}</small>
+                            </div>
+                            
+                            <!-- Driver Assignment Area -->
+                            <div class="driver-assignment drop-zone" data-accepts="driver">
+                                {% if data.current_driver %}
+                                    <div class="assigned-driver driver-card" data-driver-id="{{ data.current_driver.id }}">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-person-check text-success me-2"></i>
+                                            <div>
+                                                <strong>{{ data.current_driver.user.username }}</strong>
+                                                <br><small class="text-muted">Assigned Driver</small>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-danger ms-auto remove-assignment" 
+                                                    data-assignment-type="driver-vehicle"
+                                                    data-driver-id="{{ data.current_driver.id }}"
+                                                    data-vehicle-id="{{ data.vehicle.id }}">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="drop-placeholder">
+                                        <i class="bi bi-person-plus text-muted"></i>
+                                        <p class="text-muted mb-0">Drop driver here</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Route Assignment Info -->
+                            {% if data.current_route %}
+                                <div class="route-info">
+                                    <i class="bi bi-map text-success me-2"></i>
+                                    <small><strong>Route:</strong> {{ data.current_route.route_name }}</small>
+                                    <br><small class="text-muted">{{ data.current_route.start }} → {{ data.current_route.finish }}</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-truck-front-fill fs-2"></i>
+                            <p>No vehicles available</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Routes Column -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-map me-2"></i>Available Routes</h5>
+                    <small>{{ routes|length }} route{{ routes|length|pluralize }}</small>
+                </div>
+                <div class="card-body routes-container cards-container" id="routes-container">
+                    {% for route in routes %}
+                        <div class="route-card drop-zone" 
+                             data-route-id="{{ route.id }}"
+                             data-accepts="vehicle">
+                            <div class="route-header">
+                                <i class="bi bi-signpost text-success me-2"></i>
+                                <strong>{{ route.route_name }}</strong>
+                            </div>
+                            <small class="text-muted">{{ route.start }} → {{ route.finish }}</small>
+                            <br><small class="text-info">Rate: R{{ route.transport_rate }}/ton</small>
+                            
+                            <!-- Assigned Vehicles in this route -->
+                            <div class="assigned-vehicles mt-2">
+                                {% for data in vehicles_data %}
+                                    {% if data.current_route and data.current_route.id == route.id %}
+                                        <div class="assigned-vehicle-mini">
+                                            <i class="bi bi-truck text-warning me-1"></i>
+                                            <small>{{ data.vehicle.vehicle_registration_no }}</small>
+                                            <button class="btn btn-sm btn-outline-danger ms-1 remove-assignment" 
+                                                    data-assignment-type="vehicle-route"
+                                                    data-vehicle-id="{{ data.vehicle.id }}"
+                                                    data-route-id="{{ route.id }}">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-map-fill fs-2"></i>
+                            <p>No routes available</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Summary -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Complete Assignment Chain</h5>
+                </div>
+                <div class="card-body">
+                    <div id="assignment-summary">
+                        {% for assignment in complete_assignments %}
+                            <div class="assignment-chain">
+                                <span class="assignment-item driver">
+                                    <i class="bi bi-person me-1"></i>{{ assignment.driver.user.username }}
+                                </span>
+                                <i class="bi bi-arrow-right mx-2"></i>
+                                <span class="assignment-item vehicle">
+                                    <i class="bi bi-truck me-1"></i>{{ assignment.vehicle.vehicle_registration_no }}
+                                </span>
+                                <i class="bi bi-arrow-right mx-2"></i>
+                                <span class="assignment-item route">
+                                    <i class="bi bi-map me-1"></i>{{ assignment.route.route_name }}
+                                </span>
+                                <button class="btn btn-sm btn-outline-danger ms-2 remove-assignment" 
+                                        data-assignment-type="complete"
+                                        data-assignment-id="{{ assignment.id }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        {% empty %}
+                            <div class="text-center text-muted">
+                                <i class="bi bi-info-circle me-2"></i>
+                                No complete assignments yet. Start by dragging drivers to vehicles, then vehicles to routes.
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container for Notifications -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>
+
+<!-- CSS Styles -->
+<style>
+    .driver-card, .vehicle-card, .route-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: white;
+        transition: all 0.3s ease;
+        cursor: move;
+    }
+
+    .driver-card:hover, .vehicle-card:hover, .route-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+        transform: translateY(-2px);
+    }
+
+    .vehicle-card {
+        border-left: 4px solid #ffc107;
+    }
+
+    .route-card {
+        border-left: 4px solid #28a745;
+    }
+
+    .driver-card {
+        border-left: 4px solid #007bff;
+    }
+
+    .drop-zone {
+        min-height: 60px;
+        transition: all 0.3s ease;
+    }
+
+    .drop-zone.drag-over {
+        background-color: #e3f2fd;
+        border-color: #2196f3;
+        border-style: dashed;
+    }
+
+    .driver-assignment {
+        border: 2px dashed #ddd;
+        border-radius: 6px;
+        padding: 8px;
+        margin-top: 8px;
+        min-height: 50px;
+    }
+
+    .drop-placeholder {
+        text-align: center;
+        padding: 10px;
+        color: #999;
+    }
+
+    .assigned-driver {
+        border: none;
+        background-color: #f8f9fa;
+        margin: 0;
+    }
+
+    .route-info {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #eee;
+    }
+
+    .assignment-chain {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .assignment-item {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    .assignment-item.driver {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .assignment-item.vehicle {
+        background-color: #fff3e0;
+        color: #f57c00;
+    }
+
+    .assignment-item.route {
+        background-color: #e8f5e8;
+        color: #388e3c;
+    }
+
+    .assigned-vehicle-mini {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+        padding: 4px;
+        background-color: #fff3e0;
+        border-radius: 4px;
+    }
+
+    .dragging {
+        opacity: 0.7;
+        transform: rotate(5deg);
+    }
+
+    .remove-assignment {
+        border: none;
+        background: none;
+        color: #dc3545;
+        padding: 2px 4px;
+    }
+
+    .remove-assignment:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    /* Loading animation */
+    .loading {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    .cards-container {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+</style>
+
+<!-- JavaScript for Drag and Drop -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let draggedElement = null;
+    let draggedData = null;
+
+    // Add drag and drop event listeners
+    addDragAndDropListeners();
+
+    function addDragAndDropListeners() {
+        // Make all draggable elements draggable
+        const draggables = document.querySelectorAll('.draggable');
+        draggables.forEach(element => {
+            element.addEventListener('dragstart', handleDragStart);
+            element.addEventListener('dragend', handleDragEnd);
+        });
+
+        // Add drop zones
+        const dropZones = document.querySelectorAll('.drop-zone');
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', handleDragOver);
+            zone.addEventListener('drop', handleDrop);
+            zone.addEventListener('dragenter', handleDragEnter);
+            zone.addEventListener('dragleave', handleDragLeave);
+        });
+
+        // Add remove assignment listeners
+        const removeButtons = document.querySelectorAll('.remove-assignment');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', handleRemoveAssignment);
+        });
+    }
+
+    function handleDragStart(e) {
+        draggedElement = this;
+        draggedData = {
+            type: this.dataset.type,
+            id: this.dataset.driverId || this.dataset.vehicleId || this.dataset.routeId,
+            driverId: this.dataset.driverId,
+            vehicleId: this.dataset.vehicleId,
+            routeId: this.dataset.routeId
+        };
+        
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragEnd(e) {
+        this.classList.remove('dragging');
+        draggedElement = null;
+        draggedData = null;
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDragEnter(e) {
+        e.preventDefault();
+        if (canDrop(this, draggedData)) {
+            this.classList.add('drag-over');
+        }
+    }
+
+    function handleDragLeave(e) {
+        // Only remove if we're actually leaving the drop zone
+        if (!this.contains(e.relatedTarget)) {
+            this.classList.remove('drag-over');
+        }
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        
+        if (!canDrop(this, draggedData)) {
+            return;
+        }
+
+        const dropZone = this;
+        const accepts = dropZone.dataset.accepts;
+        
+        if (accepts === 'driver' && draggedData.type === 'driver') {
+            // Assign driver to vehicle
+            const vehicleId = dropZone.closest('[data-vehicle-id]').dataset.vehicleId;
+            assignDriverToVehicle(draggedData.driverId, vehicleId);
+        } else if (accepts === 'vehicle' && draggedData.type === 'vehicle') {
+            // Assign vehicle to route
+            const routeId = dropZone.dataset.routeId;
+            assignVehicleToRoute(draggedData.vehicleId, routeId);
+        }
+    }
+
+    function canDrop(dropZone, dragData) {
+        if (!dragData) return false;
+        
+        const accepts = dropZone.dataset.accepts;
+        
+        if (accepts === 'driver' && dragData.type === 'driver') {
+            // Check if this driver assignment area doesn't already have a driver
+            const existingDriver = dropZone.querySelector('.assigned-driver');
+            return !existingDriver;
+        } else if (accepts === 'vehicle' && dragData.type === 'vehicle') {
+            return true;
+        }
+        
+        return false;
+    }
+
+    function assignDriverToVehicle(driverId, vehicleId) {
+        showLoading(true);
+        
+        fetch('{% url "main:ajax_assign_driver_vehicle" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                driver_id: driverId,
+                vehicle_id: vehicleId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', data.message, 'success');
+                refreshPage();
+            } else {
+                showToast('Error', data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error', 'An error occurred while assigning driver to vehicle.', 'error');
+        })
+        .finally(() => {
+            showLoading(false);
+        });
+    }
+
+    function assignVehicleToRoute(vehicleId, routeId) {
+        showLoading(true);
+        
+        fetch('{% url "main:ajax_assign_vehicle_route" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                vehicle_id: vehicleId,
+                route_id: routeId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', data.message, 'success');
+                refreshPage();
+            } else {
+                showToast('Error', data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error', 'An error occurred while assigning vehicle to route.', 'error');
+        })
+        .finally(() => {
+            showLoading(false);
+        });
+    }
+
+    function handleRemoveAssignment(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const button = this;
+        const type = button.dataset.assignmentType;
+        
+        if (confirm('Are you sure you want to remove this assignment?')) {
+            showLoading(true);
+            
+            let url, body;
+            
+            if (type === 'driver-vehicle') {
+                url = '{% url "main:ajax_remove_driver_vehicle" %}';
+                body = {
+                    driver_id: button.dataset.driverId,
+                    vehicle_id: button.dataset.vehicleId
+                };
+            } else if (type === 'vehicle-route') {
+                url = '{% url "main:ajax_remove_vehicle_route" %}';
+                body = {
+                    vehicle_id: button.dataset.vehicleId,
+                    route_id: button.dataset.routeId
+                };
+            } else if (type === 'complete') {
+                url = '{% url "main:ajax_remove_complete_assignment" %}';
+                body = {
+                    assignment_id: button.dataset.assignmentId
+                };
+            }
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(body)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Success', data.message, 'success');
+                    refreshPage();
+                } else {
+                    showToast('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error', 'An error occurred while removing assignment.', 'error');
+            })
+            .finally(() => {
+                showLoading(false);
+            });
+        }
+    }
+
+    function showToast(title, message, type) {
+        const toastContainer = document.getElementById('toast-container');
+        const toastId = 'toast-' + Date.now();
+        const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        
+        const toastHTML = `
+            <div class="toast ${bgClass} text-white" id="${toastId}" role="alert">
+                <div class="toast-header ${bgClass} text-white border-0">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                    <strong class="me-auto">${title}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+        
+        // Remove toast element after it's hidden
+        document.getElementById(toastId).addEventListener('hidden.bs.toast', function() {
+            this.remove();
+        });
+    }
+
+    function showLoading(show) {
+        const container = document.querySelector('.container-fluid');
+        if (show) {
+            container.classList.add('loading');
+        } else {
+            container.classList.remove('loading');
+        }
+    }
+
+    function refreshPage() {
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

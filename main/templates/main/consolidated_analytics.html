@@ -1,0 +1,500 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Fleet Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <!-- Header -->
+    <div class="row mb-2">
+        <div class="col-12">
+            <h3 class="text-center mb-1">
+                <i class="bi bi-speedometer2 me-2"></i>Fleet Analytics Dashboard
+            </h3>
+            <p class="text-center text-muted small mb-0">Real-time weather conditions and fuel price monitoring</p>
+        </div>
+    </div>
+
+    <!-- Top Row: Weather Alerts & Fuel Price Summary -->
+    <div class="row mb-2">
+        <!-- Weather Alerts -->
+        <div class="col-md-6">
+            <div class="card h-100 border-warning" style="max-height: 120px;">
+                <div class="card-header bg-warning text-dark py-1">
+                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-1"></i>Weather Status</h6>
+                </div>
+                <div class="card-body py-2">
+                    {% if has_rain_warnings %}
+                        <div class="alert alert-danger py-1 mb-1">
+                            <small><strong>Rain Alert:</strong> {{ rain_warnings|length }} location{{ rain_warnings|length|pluralize }} affected</small>
+                        </div>
+                        {% for warning in rain_warnings|slice:":2" %}
+                        <small class="d-block">• {{ warning.location }}: {{ warning.probability }}% rain probability</small>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-success py-1 mb-1">
+                            <small><i class="bi bi-check-circle me-1"></i><strong>All Clear:</strong> Optimal weather conditions</small>
+                        </div>
+                        <small class="text-muted">Normal operations recommended across all routes</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Fuel Price Summary -->
+        <div class="col-md-6">
+            <div class="card h-100 border-info" style="max-height: 120px;">
+                <div class="card-header bg-info text-white py-1">
+                    <h6 class="mb-0"><i class="bi bi-fuel-pump me-1"></i>Fuel Prices (Live)</h6>
+                </div>
+                <div class="card-body py-2">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <small class="d-block font-weight-bold">Petrol 93</small>
+                            <small class="text-success">R{{ live_fuel_price.petrol_93_inland }}</small>
+                        </div>
+                        <div class="col-3">
+                            <small class="d-block font-weight-bold">Petrol 95</small>
+                            <small class="text-primary">R{{ live_fuel_price.petrol_95_inland }}</small>
+                        </div>
+                        <div class="col-3">
+                            <small class="d-block font-weight-bold">Diesel 0.005%</small>
+                            <small class="text-warning">R{{ live_fuel_price.diesel_005_inland }}</small>
+                        </div>
+                        <div class="col-3">
+                            <small class="d-block font-weight-bold">Fleet Rate</small>
+                            <small class="text-danger">{% if current_rate %}R{{ current_rate.fuel_rate }}{% else %}Not Set{% endif %}</small>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block text-center mt-1">Updated: {{ live_fuel_price.last_updated }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="row">
+        <!-- Left Column: Weather Cards -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card mb-2" style="height: 370px; overflow-y: auto;">
+                <div class="card-header bg-primary text-white py-1">
+                    <h6 class="mb-0"><i class="bi bi-cloud-sun me-1"></i>Weather Conditions</h6>
+                </div>
+                <div class="card-body p-2">
+                    {% for city_key, weather in weather_data.items %}
+                    <div class="weather-mini-card mb-2 p-2 border rounded {% if weather.rain > 0 %}bg-light{% endif %}">
+                        <div class="row align-items-center">
+                            <div class="col-4">
+                                <small class="font-weight-bold">{{ weather.location }}</small>
+                                <br><small class="text-muted small">{{ weather.description }}</small>
+                            </div>
+                            <div class="col-3 text-center">
+                                <i class="{{ weather.icon }} text-primary" style="font-size: 1.2rem;"></i>
+                                <br><small class="font-weight-bold">{{ weather.temperature|floatformat:1 }}°C</small>
+                            </div>
+                            <div class="col-5">
+                                <small class="d-block" style="font-size: 0.75rem;">💨 {{ weather.wind_speed|floatformat:1 }} km/h</small>
+                                <small class="d-block" style="font-size: 0.75rem;">💧 {{ weather.humidity }}%</small>
+                                {% if weather.rain > 0 %}
+                                <small class="text-danger" style="font-size: 0.75rem;">🌧️ {{ weather.rain }}mm</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Column: Charts -->
+        <div class="col-lg-4 col-md-6">
+            <!-- Temperature Chart -->
+            <div class="card mb-2" style="height: 185px;">
+                <div class="card-header py-1">
+                    <h6 class="mb-0 small"><i class="bi bi-thermometer me-1"></i>Temperature Comparison</h6>
+                </div>
+                <div class="card-body p-1">
+                    <canvas id="temperatureChart" style="height: 125px !important;"></canvas>
+                </div>
+            </div>
+
+            <!-- Fuel Price Trend Chart -->
+            <div class="card" style="height: 175px;">
+                <div class="card-header py-1">
+                    <h6 class="mb-0 small"><i class="bi bi-graph-up me-1"></i>Fuel Price Trends</h6>
+                </div>
+                <div class="card-body p-1">
+                    <canvas id="fuelTrendChart" style="height: 115px !important;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Fuel Details & Fleet Info -->
+        <div class="col-lg-4 col-md-12">
+            <!-- Detailed Fuel Prices -->
+            <div class="card mb-2" style="height: 185px;">
+                <div class="card-header bg-success text-white py-1">
+                    <h6 class="mb-0"><i class="bi bi-fuel-pump-fill me-1"></i>Fuel Prices (Inland/Coast)</h6>
+                </div>
+                <div class="card-body p-2">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="fuel-price-item mb-1">
+                                <small class="d-block font-weight-bold text-success" style="font-size: 0.8rem;">Petrol 93</small>
+                                <small style="font-size: 0.75rem;">Inland: R{{ live_fuel_price.petrol_93_inland }}</small>
+                                <br><small style="font-size: 0.75rem;">Coast: R{{ live_fuel_price.petrol_93_coast }}</small>
+                            </div>
+                            <div class="fuel-price-item mb-1">
+                                <small class="d-block font-weight-bold text-primary" style="font-size: 0.8rem;">Petrol 95</small>
+                                <small style="font-size: 0.75rem;">Inland: R{{ live_fuel_price.petrol_95_inland }}</small>
+                                <br><small style="font-size: 0.75rem;">Coast: R{{ live_fuel_price.petrol_95_coast }}</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="fuel-price-item mb-1">
+                                <small class="d-block font-weight-bold text-warning" style="font-size: 0.8rem;">Diesel 0.005%</small>
+                                <small style="font-size: 0.75rem;">Inland: R{{ live_fuel_price.diesel_005_inland }}</small>
+                                <br><small style="font-size: 0.75rem;">Coast: R{{ live_fuel_price.diesel_005_coast }}</small>
+                            </div>
+                            <div class="fuel-price-item mb-1">
+                                <small class="d-block font-weight-bold text-danger" style="font-size: 0.8rem;">Diesel 0.05%</small>
+                                <small style="font-size: 0.75rem;">Inland: R{{ live_fuel_price.diesel_05_inland }}</small>
+                                <br><small style="font-size: 0.75rem;">Coast: R{{ live_fuel_price.diesel_05_coast }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fleet Information -->
+            <div class="card" style="height: 175px;">
+                <div class="card-header bg-dark text-white py-1">
+                    <h6 class="mb-0"><i class="bi bi-truck me-1"></i>Fleet Status</h6>
+                </div>
+                <div class="card-body p-2">
+                    <div class="fleet-info-item mb-2">
+                        <small class="d-block font-weight-bold" style="font-size: 0.8rem;">Current Fleet Rate</small>
+                        {% if current_rate %}
+                        <small class="text-success" style="font-size: 0.75rem;">R{{ current_rate.fuel_rate }} per litre</small>
+                        <br><small class="text-muted" style="font-size: 0.7rem;">{{ current_rate.name }}</small>
+                        {% else %}
+                        <small class="text-danger" style="font-size: 0.75rem;">No active rate set</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="fleet-info-item mb-2">
+                        <small class="d-block font-weight-bold" style="font-size: 0.8rem;">Rate History</small>
+                        {% if historical_rates %}
+                            {% for rate in historical_rates|slice:":3" %}
+                            <small class="d-block" style="font-size: 0.7rem;">R{{ rate.fuel_rate }} - {{ rate.created_at|date:"M d" }}</small>
+                            {% endfor %}
+                        {% else %}
+                            <small class="text-muted" style="font-size: 0.75rem;">No historical data</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="fleet-info-item">
+                        <small class="d-block font-weight-bold" style="font-size: 0.8rem;">Operations Status</small>
+                        {% if has_rain_warnings %}
+                        <small class="text-warning" style="font-size: 0.75rem;">⚠️ Weather advisory active</small>
+                        {% else %}
+                        <small class="text-success" style="font-size: 0.75rem;">✅ Normal operations</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom: Quick Actions -->
+    <div class="row mt-1">
+        <div class="col-12">
+            <div class="card" style="height: 50px;">
+                <div class="card-body py-1">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <a href="{% url 'main:fuel_rate_management' %}" class="btn btn-sm btn-primary me-2" style="font-size: 0.75rem;">
+                            <i class="bi bi-gear me-1"></i>Fuel Rates
+                        </a>
+                        <a href="{% url 'main:fuel_prices_analytics' %}" class="btn btn-sm btn-secondary me-2" style="font-size: 0.75rem;">
+                            <i class="bi bi-graph-up me-1"></i>Fuel Trend Data
+                        </a>
+                        <a href="{% url 'main:driver_expiry_warnings' %}" class="btn btn-sm btn-warning me-2" style="font-size: 0.75rem;">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Expiry Alerts
+                        </a>
+                        <span class="text-muted ms-3" style="font-size: 0.75rem;">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Auto-refresh: <span id="refresh-counter">30s</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    /* Container optimizations for no-scroll */
+    .container-fluid {
+        max-height: 100vh;
+        overflow: hidden;
+    }
+    
+    /* Card optimizations */
+    .weather-mini-card {
+        transition: all 0.2s ease;
+        min-height: 60px;
+    }
+    .weather-mini-card:hover {
+        background-color: #f8f9fa !important;
+        transform: translateY(-1px);
+    }
+    .fuel-price-item {
+        border-left: 3px solid #dee2e6;
+        padding-left: 8px;
+    }
+    .fleet-info-item {
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 4px;
+    }
+    .fleet-info-item:last-child {
+        border-bottom: none;
+    }
+    
+    /* Chart optimizations */
+    canvas {
+        max-height: none !important;
+    }
+    .card-header h6 {
+        font-size: 0.9rem;
+    }
+    .btn-sm {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 1199px) {
+        .col-lg-4 {
+            margin-bottom: 10px;
+        }
+        .weather-mini-card {
+            min-height: 50px;
+        }
+    }
+    
+    @media (max-width: 991px) {
+        .card {
+            height: auto !important;
+            max-height: none !important;
+        }
+        .row {
+            margin-bottom: 5px;
+        }
+    }
+    
+    @media (max-width: 767px) {
+        .container-fluid {
+            padding: 5px;
+            max-height: none;
+            overflow: visible;
+        }
+        .card-body {
+            padding: 10px !important;
+        }
+        .btn-sm {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+        .weather-mini-card .col-4,
+        .weather-mini-card .col-3,
+        .weather-mini-card .col-5 {
+            font-size: 0.7rem;
+        }
+    }
+    
+    /* Print optimizations */
+    @media print {
+        .btn, .card-footer {
+            display: none !important;
+        }
+        .container-fluid {
+            max-height: none;
+        }
+    }
+</style>
+
+<!-- Chart Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Create compact temperature chart
+    createTemperatureChart();
+    
+    // Create compact fuel trend chart
+    createFuelTrendChart();
+    
+    // Start refresh counter
+    startRefreshCounter();
+});
+
+function createTemperatureChart() {
+    const ctx = document.getElementById('temperatureChart').getContext('2d');
+    
+    const cities = [];
+    const temperatures = [];
+    const colors = [];
+    
+    {% for city_key, weather in weather_data.items %}
+    cities.push('{{ weather.location|slice:":3" }}'); // Shortened city names
+    temperatures.push({{ weather.temperature|floatformat:1 }});
+    
+    const temp = {{ weather.temperature|floatformat:1 }};
+    if (temp > 25) {
+        colors.push('rgba(255, 99, 132, 0.8)');
+    } else if (temp > 20) {
+        colors.push('rgba(255, 205, 86, 0.8)');
+    } else if (temp > 15) {
+        colors.push('rgba(75, 192, 192, 0.8)');
+    } else {
+        colors.push('rgba(54, 162, 235, 0.8)');
+    }
+    {% endfor %}
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: cities,
+            datasets: [{
+                data: temperatures,
+                backgroundColor: colors,
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + '°C';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: Math.max(...temperatures) + 3,
+                    ticks: {
+                        font: { size: 10 },
+                        callback: function(value) {
+                            return value + '°';
+                        }
+                    },
+                    grid: { display: false }
+                },
+                x: {
+                    ticks: { font: { size: 10 } },
+                    grid: { display: false }
+                }
+            },
+            animation: { duration: 1000 }
+        }
+    });
+}
+
+function createFuelTrendChart() {
+    const ctx = document.getElementById('fuelTrendChart').getContext('2d');
+    
+    const historicalPrices = {{ historical_prices_json|safe }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: historicalPrices.map(item => item.date.substring(5)), // Show MM-DD only
+            datasets: [
+                {
+                    label: 'Petrol 93',
+                    data: historicalPrices.map(item => item.petrol_93),
+                    borderColor: 'rgb(40, 167, 69)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.3,
+                    borderWidth: 2,
+                    pointRadius: 2
+                },
+                {
+                    label: 'Diesel 0.005%',
+                    data: historicalPrices.map(item => item.diesel_005),
+                    borderColor: 'rgb(255, 193, 7)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    tension: 0.3,
+                    borderWidth: 2,
+                    pointRadius: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    display: true,
+                    position: 'top',
+                    labels: { font: { size: 10 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': R' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 19,
+                    max: 22,
+                    ticks: {
+                        font: { size: 10 },
+                        callback: function(value) {
+                            return 'R' + value.toFixed(1);
+                        }
+                    },
+                    grid: { display: false }
+                },
+                x: {
+                    ticks: { font: { size: 10 } },
+                    grid: { display: false }
+                }
+            },
+            animation: { duration: 1000 }
+        }
+    });
+}
+
+function startRefreshCounter() {
+    let seconds = 30;
+    const counter = document.getElementById('refresh-counter');
+    
+    const interval = setInterval(function() {
+        counter.textContent = seconds + 's';
+        seconds--;
+        
+        if (seconds < 0) {
+            location.reload();
+        }
+    }, 1000);
+}
+
+// Add hover effects
+$(document).ready(function() {
+    $('.weather-mini-card').hover(
+        function() { $(this).addClass('shadow-sm'); },
+        function() { $(this).removeClass('shadow-sm'); }
+    );
+});
+</script>
+{% endblock %}

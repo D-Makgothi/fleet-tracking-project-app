@@ -1,0 +1,851 @@
+{% extends 'main/base.html' %}
+
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+<style>
+    /* Enhanced User Management Styling */
+    .users-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .users-header h2 {
+        color: #1e293b;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .users-header-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .search-section {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-title {
+        color: #1e293b;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .search-form {
+        display: grid;
+        grid-template-columns: 200px 1fr auto auto;
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .form-select, .form-control {
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+        background: #ffffff;
+        color: #1e293b;
+    }
+
+    .form-select:focus, .form-control:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none;
+    }
+
+    .search-btn {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .search-btn:hover {
+        background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+    }
+
+    .clear-btn {
+        background: #f8fafc;
+        color: #64748b;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .clear-btn:hover {
+        background: #f1f5f9;
+        color: #475569;
+        text-decoration: none;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--accent-color);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.drivers {
+        --accent-color: #2563eb;
+    }
+
+    .stat-card.controllers {
+        --accent-color: #0ea5e9;
+    }
+
+    .stat-card.admins {
+        --accent-color: #f59e0b;
+    }
+
+    .stat-card.total {
+        --accent-color: #10b981;
+    }
+
+    .stat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: var(--accent-color);
+        background: color-mix(in srgb, var(--accent-color) 10%, transparent);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .stat-label {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0.25rem 0 0 0;
+    }
+
+    .users-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .users-card-header {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .users-card-title {
+        color: #1e293b;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .export-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .export-btn {
+        background: #ffffff;
+        border: 2px solid #e2e8f0;
+        color: #64748b;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .export-btn:hover {
+        border-color: #10b981;
+        color: #10b981;
+        background: #f0fdf4;
+        text-decoration: none;
+    }
+
+    .users-table-container {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .users-table {
+        margin: 0;
+        border: none;
+    }
+
+    .users-table thead th {
+        background: #f8fafc;
+        border: none;
+        border-bottom: 2px solid #e2e8f0;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1.5rem;
+        white-space: nowrap;
+    }
+
+    .users-table tbody td {
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 1.25rem 1.5rem;
+        vertical-align: middle;
+    }
+
+    .users-table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .users-table tbody tr:hover {
+        background: #f8fafc;
+        transform: scale(1.001);
+    }
+
+    .user-type-badge {
+        padding: 0.5rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .badge-driver {
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        color: #1e40af;
+        border: 1px solid #93c5fd;
+    }
+
+    .badge-controller {
+        background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+        color: #0c4a6e;
+        border: 1px solid #7dd3fc;
+    }
+
+    .badge-admin {
+        background: linear-gradient(135deg, #fef3c7, #fed7aa);
+        color: #92400e;
+        border: 1px solid #fbbf24;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .user-username {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-family: monospace;
+    }
+
+    .user-email {
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+
+    .user-phone {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-family: monospace;
+    }
+
+    .license-info {
+        font-size: 0.875rem;
+    }
+
+    .license-number {
+        color: #1e293b;
+        font-weight: 500;
+        font-family: monospace;
+    }
+
+    .license-expiry {
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+
+    .expiry-warning {
+        color: #f59e0b;
+        font-weight: 600;
+    }
+
+    .expiry-danger {
+        color: #ef4444;
+        font-weight: 600;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 2px solid transparent;
+    }
+
+    .action-btn.btn-edit {
+        background: #fffbeb;
+        color: #d97706;
+        border-color: #fed7aa;
+    }
+
+    .action-btn.btn-edit:hover {
+        background: #d97706;
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+    }
+
+    .action-btn.btn-delete {
+        background: #fef2f2;
+        color: #dc2626;
+        border-color: #fecaca;
+    }
+
+    .action-btn.btn-delete:hover {
+        background: #dc2626;
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    .action-btn.btn-protected {
+        background: #f8fafc;
+        color: #64748b;
+        border-color: #e2e8f0;
+        cursor: not-allowed;
+    }
+
+    .view-only {
+        color: #94a3b8;
+        font-size: 0.875rem;
+        font-style: italic;
+        text-align: center;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: linear-gradient(135deg, #f8fafc, #ffffff);
+        border-radius: 16px;
+        border: 2px dashed #cbd5e1;
+        margin: 2rem 0;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #cbd5e1;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state-title {
+        color: #475569;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state-text {
+        color: #64748b;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 1200px) {
+        .search-form {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .users-header {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .users-header h2 {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .search-section {
+            padding: 1.5rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .users-card-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .export-actions {
+            justify-content: center;
+        }
+
+        .users-table-container {
+            overflow-x: auto;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .action-btn {
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- User Management Header -->
+    <div class="users-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <h2>
+                <div class="users-header-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                User Management
+                <span style="font-size: 1rem; font-weight: 500; color: #64748b;">({{ total_users }} total users)</span>
+            </h2>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="search-section">
+        <h5 class="search-title">
+            <i class="bi bi-search"></i>
+            Search & Filter Users
+        </h5>
+        <form method="GET" class="search-form">
+            <div class="form-group">
+                <label class="form-label">User Type</label>
+                <select name="user_type" class="form-select" onchange="this.form.submit()">
+                    <option value="all" {% if user_type_filter == 'all' %}selected{% endif %}>All Users</option>
+                    <option value="drivers" {% if user_type_filter == 'drivers' %}selected{% endif %}>Drivers Only</option>
+                    <option value="controllers" {% if user_type_filter == 'controllers' %}selected{% endif %}>Controllers Only</option>
+                    <option value="admin" {% if user_type_filter == 'admin' %}selected{% endif %}>Admin Only</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Search Query</label>
+                <input type="text" name="search" class="form-control"
+                       placeholder="Search by name, mine, license, phone, department, or employee ID..."
+                       value="{{ search_query }}">
+            </div>
+            <button type="submit" class="search-btn">
+                <i class="bi bi-search"></i>
+                Search
+            </button>
+            {% if search_query or user_type_filter != 'all' %}
+                <a href="{% url 'main:active_users' %}" class="clear-btn">
+                    <i class="bi bi-x-circle"></i>
+                    Clear
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="stats-grid">
+        <div class="stat-card drivers">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="bi bi-truck"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ driver_count }}</div>
+            <div class="stat-label">Drivers</div>
+        </div>
+        <div class="stat-card controllers">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="bi bi-person-gear"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ controller_count }}</div>
+            <div class="stat-label">Controllers</div>
+        </div>
+        <div class="stat-card admins">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ admin_count }}</div>
+            <div class="stat-label">Administrators</div>
+        </div>
+        <div class="stat-card total">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ total_users }}</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+    </div>
+
+    <!-- Users Table Card -->
+    <div class="users-card">
+        <div class="users-card-header">
+            <h5 class="users-card-title">
+                <i class="bi bi-list-ul"></i>
+                User Directory
+            </h5>
+            <div class="export-actions">
+                <a href="#" class="export-btn" onclick="exportToCSV()">
+                    <i class="bi bi-download"></i>
+                    Export CSV
+                </a>
+                <a href="#" class="export-btn" onclick="printTable()">
+                    <i class="bi bi-printer"></i>
+                    Print
+                </a>
+            </div>
+        </div>
+
+        <div class="users-table-container">
+            {% if all_users_data %}
+                <div class="table-responsive">
+                    <table class="table users-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>User Type</th>
+                                <th>Identity</th>
+                                <th>Contact</th>
+                                <th>Work Details</th>
+                                <th>Driver's License</th>
+                                <th>Induction License</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user_data in all_users_data %}
+                            <tr>
+                                <td>
+                                    {% if user_data.type == 'Driver' %}
+                                        <span class="user-type-badge badge-driver">
+                                            <i class="bi bi-truck"></i>Driver
+                                        </span>
+                                    {% elif user_data.type == 'Controller' %}
+                                        <span class="user-type-badge badge-controller">
+                                            <i class="bi bi-person-gear"></i>Controller
+                                        </span>
+                                    {% elif user_data.type == 'Admin' %}
+                                        <span class="user-type-badge badge-admin">
+                                            <i class="bi bi-shield-check"></i>Admin
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="user-name">{{ user_data.user.get_full_name|default:user_data.user.username }}</div>
+                                    <div class="user-username">@{{ user_data.user.username }}</div>
+                                </td>
+                                <td>
+                                    <div class="user-email">{{ user_data.user.email|default:"-" }}</div>
+                                    <div class="user-phone">{{ user_data.phone_number|default:"-" }}</div>
+                                </td>
+                                <td>
+                                    <div style="margin-bottom: 0.25rem;">
+                                        <strong>Site:</strong> {{ user_data.mine|default:"-" }}
+                                    </div>
+                                    <div style="margin-bottom: 0.25rem;">
+                                        <strong>Dept:</strong> {{ user_data.department|default:"-" }}
+                                    </div>
+                                    <div>
+                                        <strong>ID:</strong> {{ user_data.employee_id|default:"-" }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="license-info">
+                                        <div class="license-number">{{ user_data.driver_license_no|default:"-" }}</div>
+                                        <div class="license-expiry">
+                                            {% if user_data.driver_license_expiry %}
+                                                Expires: {{ user_data.driver_license_expiry }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="license-info">
+                                        <div class="license-number">{{ user_data.induction_license_no|default:"-" }}</div>
+                                        <div class="license-expiry">
+                                            {% if user_data.induction_license_expiry %}
+                                                Expires: {{ user_data.induction_license_expiry }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if user.is_staff %}
+                                        <div class="action-buttons">
+                                            {% if user_data.type == 'Driver' %}
+                                                <a href="{% url 'main:edit_user' user_data.profile.id %}" class="action-btn btn-edit">
+                                                    <i class="bi bi-pencil"></i>Edit
+                                                </a>
+                                                <a href="{% url 'main:delete_user' user_data.profile.id %}" class="action-btn btn-delete"
+                                                   onclick="return confirm('Are you sure you want to delete this driver?')">
+                                                    <i class="bi bi-trash"></i>Delete
+                                                </a>
+                                            {% elif user_data.type == 'Controller' %}
+                                                <a href="{% url 'register_login:edit_controller' user_data.profile.id %}" class="action-btn btn-edit">
+                                                    <i class="bi bi-pencil"></i>Edit
+                                                </a>
+                                                <a href="{% url 'register_login:delete_controller' user_data.profile.id %}" class="action-btn btn-delete"
+                                                   onclick="return confirm('Are you sure you want to delete this controller?')">
+                                                    <i class="bi bi-trash"></i>Delete
+                                                </a>
+                                            {% elif user_data.type == 'Admin' %}
+                                                <span class="action-btn btn-protected" title="Admin users cannot be managed here">
+                                                    <i class="bi bi-shield-check"></i>Protected
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="view-only">
+                                            <i class="bi bi-eye"></i>
+                                            View Only
+                                            <br>
+                                            <small>Admin access required</small>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h3 class="empty-state-title">No Users Found</h3>
+                    <p class="empty-state-text">
+                        {% if search_query %}
+                            No users found matching "{{ search_query }}".
+                        {% elif user_type_filter != 'all' %}
+                            No {{ user_type_filter }} found in the system.
+                        {% else %}
+                            No active users found in the system.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Export functionality
+    function exportToCSV() {
+        const table = document.getElementById('usersTable');
+        const rows = Array.from(table.querySelectorAll('tr'));
+
+        const csvContent = rows.map(row => {
+            const cells = Array.from(row.querySelectorAll('th, td'));
+            return cells.map(cell => {
+                // Clean up the cell content
+                const content = cell.textContent.trim().replace(/\s+/g, ' ');
+                return `"${content.replace(/"/g, '""')}"`;
+            }).join(',');
+        }).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'fleet_users_' + new Date().toISOString().split('T')[0] + '.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function printTable() {
+        const printWindow = window.open('', '_blank');
+        const table = document.getElementById('usersTable').outerHTML;
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Fleet Management - User Directory</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f5f5f5; font-weight: bold; }
+                        tr:nth-child(even) { background-color: #f9f9f9; }
+                        .user-type-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Fleet Management - User Directory</h1>
+                    <p>Generated on: ${new Date().toLocaleDateString()}</p>
+                    ${table}
+                </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    // Add subtle animations on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.stat-card');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.style.animation = 'fadeInUp 0.6s ease-out forwards';
+        });
+
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %}

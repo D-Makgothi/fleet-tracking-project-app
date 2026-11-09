@@ -1,0 +1,402 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Fleet Bookkeeping{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-journal-text text-primary"></i> Fleet Bookkeeping</h2>
+        <div>
+            <a href="{% url 'main:export_bookkeeping_excel' %}{% if search_query %}?search={{ search_query }}{% endif %}" 
+               class="btn btn-success me-2">
+                <i class="bi bi-file-earmark-excel"></i> Export to Excel
+            </a>
+            <span class="badge bg-primary fs-6">{{ total_records }} Records</span>
+        </div>
+    </div>
+    
+    <!-- Search and Filter Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-10">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Search by driver name, fleet number, vehicle number, or route..." 
+                           value="{{ search_query }}">
+                </div>
+                <div class="col-md-2">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                        {% if search_query %}
+                            <a href="{% url 'main:bookkeeping' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Fleet Performance Dashboard -->
+    <div class="row mb-4">
+        <!-- Daily Production Card -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-calendar-day fs-1 me-3"></i>
+                        <div>
+                            <h6 class="card-title mb-1">Daily Production</h6>
+                            <h5 class="mb-0">R{{ total_actual_revenue|floatformat:2 }}</h5>
+                            <small class="opacity-75">Target: R{{ total_planned_revenue|floatformat:2 }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Weekly Performance Card -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-calendar-week fs-1 me-3"></i>
+                        <div>
+                            <h6 class="card-title mb-1">7-Day Performance</h6>
+                            <h5 class="mb-0">R{{ total_planned_revenue|floatformat:2 }}</h5>
+                            <small class="opacity-75">{{ total_records }} loads completed</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Monthly Tracking Card -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card {% if total_variance >= 0 %}bg-info{% else %}bg-warning{% endif %} text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-calendar-month fs-1 me-3"></i>
+                        <div>
+                            <h6 class="card-title mb-1">Month to Date</h6>
+                            <h5 class="mb-0">R{{ total_variance|floatformat:2 }}</h5>
+                            <small class="opacity-75">Variance vs planned</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Fleet Status Card -->
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-truck fs-1 me-3"></i>
+                        <div>
+                            <h6 class="card-title mb-1">Active Fleet</h6>
+                            <h5 class="mb-0">2 Vehicles</h5>
+                            <small class="opacity-75">6 active routes</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Route Chart Matrix -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-map"></i> Route Planning Matrix ({{ routes|length }} Routes)</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Route Name</th>
+                            <th>Start Location</th>
+                            <th>Destination</th>
+                            <th>Rate per Load</th>
+                            <th>Today's Status</th>
+                            <th>Weekly Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for route in routes %}
+                        <tr>
+                            <td>
+                                <span class="badge {% cycle 'bg-primary' 'bg-danger' 'bg-info' 'bg-warning text-dark' 'bg-dark' 'bg-secondary' %}">
+                                    {{ route.route_name }}
+                                </span>
+                            </td>
+                            <td>{{ route.start }}</td>
+                            <td>{{ route.finish }}</td>
+                            <td class="text-success">
+                                <strong>R{{ route.transport_rate|floatformat:2|default:"--" }}</strong>
+                            </td>
+                            <td>
+                                {% if route.is_active %}
+                                    <span class="badge bg-success">YES</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">NO</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    {% comment %} Calculate usage percentage based on route usage {% endcomment %}
+                                    {% with usage=route.usage_percentage|default:50 %}
+                                        <div class="progress-bar {% if usage >= 70 %}bg-success{% elif usage >= 50 %}bg-info{% elif usage >= 30 %}bg-warning{% else %}bg-secondary{% endif %}" 
+                                             style="width: {{ usage }}%">{{ usage }}%</div>
+                                    {% endwith %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No active routes found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if bookkeeping_data %}
+        <!-- Main Bookkeeping Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-table"></i> 
+                    {% if search_query %}
+                        Bookkeeping Data - Filtered Results for "{{ search_query }}"
+                    {% else %}
+                        Complete Fleet Bookkeeping Data
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th><i class="bi bi-calendar3"></i> Date</th>
+                                <th><i class="bi bi-person"></i> Driver</th>
+                                <th><i class="bi bi-truck"></i> Fleet No.</th>
+                                <th><i class="bi bi-car-front"></i> Vehicle Reg.</th>
+                                <th><i class="bi bi-signpost-2"></i> Routes Completed</th>
+                                <th><i class="bi bi-boxes"></i> Loads</th>
+                                <th><i class="bi bi-clock"></i> Shift</th>
+                                <th><i class="bi bi-speedometer"></i> Performance</th>
+                                <th><i class="bi bi-cash-coin"></i> Actual Revenue</th>
+                                <th><i class="bi bi-graph-down"></i> vs Target</th>
+                                <th><i class="bi bi-magic"></i> Trend</th>
+                                <th><i class="bi bi-check-circle"></i> Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in bookkeeping_data %}
+                            <tr>
+                                <td>
+                                    {% if record.date %}
+                                        <span class="text-muted">{{ record.date|date:"M d" }}</span>
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ record.driver_name }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ record.fleet_no }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ record.vehicle_no }}</span>
+                                </td>
+                                <td>
+                                    <small class="text-info">{{ record.routes_taken|truncatechars:30 }}</small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-dark">{{ record.loads_planned }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% with record.shift_type|default:"D/S" as shift %}
+                                        <span class="badge {% if shift == 'D/S' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                            {{ shift }}
+                                        </span>
+                                    {% endwith %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge {{ record.performance_class }}">{{ record.performance_badge }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <strong class="text-success">R{{ record.actual_revenue|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong class="{{ record.vs_target_class }}">{{ record.vs_target_display }}</strong>
+                                </td>
+                                <td class="text-center">
+                                    {% if record.predicted_revenue %}
+                                        {% with record.predicted_revenue|floatformat:0|add:0 as trend %}
+                                            {% if trend > record.actual_revenue|floatformat:0|add:0 %}
+                                                <i class="bi bi-graph-up-arrow text-success"></i>
+                                            {% elif trend == record.actual_revenue|floatformat:0|add:0 %}
+                                                <i class="bi bi-dash text-warning"></i>
+                                            {% else %}
+                                                <i class="bi bi-graph-down-arrow text-danger"></i>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% else %}
+                                        <i class="bi bi-dash text-muted"></i>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.status == 'Completed' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Active
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-x-circle"></i> Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-dark">
+                            <tr>
+                                <td colspan="6"><strong>FLEET TOTALS</strong></td>
+                                <td class="text-center"><strong>ALL</strong></td>
+                                <td class="text-center">
+                                    <strong class="badge bg-info">MIXED</strong>
+                                </td>
+                                <td class="text-end"><strong class="text-success">R{{ total_actual_revenue|floatformat:2 }}</strong></td>
+                                <td class="text-end">
+                                    <strong class="{{ total_vs_target_class }}">{{ total_vs_target_display }}</strong>
+                                </td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information Card -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="card-title"><i class="bi bi-info-circle"></i> Fleet Performance Overview</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6 class="text-primary">Dashboard Metrics</h6>
+                        <p class="small text-muted mb-1">
+                            <strong>Daily Target:</strong> R{{ total_planned_revenue|floatformat:2 }} (route-specific)
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <strong>Active Routes:</strong> {{ routes|length }} operational routes
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <strong>Fleet Size:</strong> 2 vehicles currently active
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-success">Performance Tracking</h6>
+                        <p class="small text-muted mb-1">
+                            <strong>Shift Types:</strong> Day Shift (D/S) and Night Shift (N/S)
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <strong>Performance Levels:</strong> Exceeds, Good, Average, Below target
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <strong>Route Usage:</strong> Weekly utilization tracking per route
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-info">Data Sources</h6>
+                        <p class="small text-muted mb-1">
+                            <strong>Real-time:</strong> Daily revenue reports and route completions
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <strong>Trends:</strong> AI-calculated performance predictions
+                        </p>
+                        <p class="small text-muted mb-0">
+                            <strong>Status:</strong> Active/Inactive vehicle and driver assignments
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- No Data State -->
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-journal-x fs-1 text-muted mb-3"></i>
+                <h4 class="text-muted">
+                    {% if search_query %}
+                        No Bookkeeping Records Found for "{{ search_query }}"
+                    {% else %}
+                        No Bookkeeping Data Available
+                    {% endif %}
+                </h4>
+                <p class="text-muted">
+                    {% if search_query %}
+                        Try adjusting your search criteria or clear the search to see all records.
+                    {% else %}
+                        Bookkeeping data will appear here once drivers start submitting daily revenue reports with completed routes.
+                    {% endif %}
+                </p>
+                {% if search_query %}
+                    <a href="{% url 'main:bookkeeping' %}" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-arrow-left"></i> Clear Search
+                    </a>
+                {% endif %}
+                <a href="{% url 'main:daily_rev_report' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Revenue Report
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+    
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .table td {
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+    
+    .badge {
+        font-size: 0.8rem;
+    }
+    
+    .table-responsive {
+        border-radius: 0.375rem;
+    }
+    
+    @media (max-width: 768px) {
+        .table-responsive {
+            font-size: 0.8rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
